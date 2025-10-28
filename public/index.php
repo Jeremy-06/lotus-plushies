@@ -1,0 +1,112 @@
+<?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+session_start();
+
+require_once __DIR__ . '/../src/helpers/Session.php';
+require_once __DIR__ . '/../src/controllers/ProductController.php';
+require_once __DIR__ . '/../src/controllers/CartController.php';
+require_once __DIR__ . '/../src/controllers/OrderController.php';
+require_once __DIR__ . '/../src/controllers/AuthController.php';
+require_once __DIR__ . '/../src/controllers/UserController.php';
+require_once __DIR__ . '/../src/models/Product.php';
+require_once __DIR__ . '/../src/models/Category.php';
+
+Session::start();
+
+// Debug information
+echo "<!-- DEBUG INFO -->";
+echo "<!-- Current Page: " . ($_GET['page'] ?? 'none') . " -->";
+echo "<!-- Current Action: " . ($_GET['action'] ?? 'none') . " -->";
+echo "<!-- POST Data: " . (empty($_POST) ? 'empty' : 'has data') . " -->";
+echo "<!-- Session User ID: " . (Session::get('user_id') ?? 'not set') . " -->";
+echo "<!-- Session Role: " . (Session::get('role') ?? 'not set') . " -->";
+
+// Route handling
+$page = isset($_GET['page']) ? $_GET['page'] : 'home';
+$action = isset($_GET['action']) ? $_GET['action'] : 'index';
+
+switch ($page) {
+    case 'login':
+        $controller = new AuthController();
+        if ($action === 'process') {
+            echo "<!-- Processing login -->";
+            $controller->login();
+        } else {
+            echo "<!-- Showing login form -->";
+            $controller->showLogin();
+        }
+        break;
+        
+    case 'register':
+        $controller = new AuthController();
+        if ($action === 'process') {
+            $controller->register();
+        } else {
+            $controller->showRegister();
+        }
+        break;
+        
+    case 'logout':
+        $controller = new AuthController();
+        $controller->logout();
+        break;
+        
+    case 'products':
+        $controller = new ProductController();
+        $controller->index();
+        break;
+        
+    case 'product_detail':
+        $controller = new ProductController();
+        $controller->show();
+        break;
+        
+    case 'cart':
+        $controller = new CartController();
+        if ($action === 'add') {
+            $controller->add();
+        } elseif ($action === 'update') {
+            $controller->update();
+        } elseif ($action === 'remove') {
+            $controller->remove();
+        } else {
+            $controller->index();
+        }
+        break;
+        
+    case 'checkout':
+        $controller = new OrderController();
+        if ($action === 'process') {
+            $controller->placeOrder();
+        } else {
+            $controller->checkout();
+        }
+        break;
+        
+    case 'order_success':
+        $controller = new OrderController();
+        $controller->success();
+        break;
+        
+    case 'order_history':
+        $controller = new OrderController();
+        $controller->history();
+        break;
+        
+    case 'profile':
+        $controller = new UserController();
+        $controller->profile();
+        break;
+        
+    case 'home':
+    default:
+        $productModel = new Product();
+        $categoryModel = new Category();
+        $products = $productModel->getActiveProducts();
+        $categories = $categoryModel->getActive();
+        include __DIR__ . '/../src/views/home.php';
+        break;
+}

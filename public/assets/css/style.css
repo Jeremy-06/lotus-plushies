@@ -1,0 +1,130 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container, .container-fluid {
+    flex: 1;
+}
+
+/* Navbar Styles */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Product Card Styles */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.card-img-top {
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Table Styles */
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.03);
+    cursor: pointer;
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Button Styles */
+.btn {
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 0.5rem;
+}
+
+/* Footer Styles */
+footer {
+    margin-top: auto;
+    background-color: #f8f9fa;
+}
+
+/* Admin Panel Styles */
+.navbar-dark {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Form Styles */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Image Preview */
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Opacity Helper */
+.opacity-50 {
+    opacity: 0.5;
+}
+
+/* Gap Helper for older Bootstrap versions */
+.gap-2 > * {
+    margin-right: 0.5rem;
+}
+
+.gap-2 > *:last-child {
+    margin-right: 0;
+}
+
+/* Custom Card Styles */
+.card-body h5 {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Status Colors */
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

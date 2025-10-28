@@ -1,0 +1,28 @@
+# Uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHP
+composer.phar
+vendor/
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# Cache
+cache/
+tmp/

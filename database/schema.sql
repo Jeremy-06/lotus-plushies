@@ -1,110 +1,128 @@
--- users table
+-- Create Database
+CREATE DATABASE IF NOT EXISTS im_final_project;
+USE im_final_project;
+
+-- Users Table
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('customer', 'admin') DEFAULT 'customer',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- categories table
+-- Categories Table
 CREATE TABLE categories (
-    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     category_name VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- products table
-CREATE TABLE products (
-    product_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_name VARCHAR(100) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    category_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id)
-);
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- inventory table
+-- Products Table
+CREATE TABLE products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    category_id INT NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    cost_price DECIMAL(10, 2) NOT NULL,
+    selling_price DECIMAL(10, 2) NOT NULL,
+    img_path VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    INDEX idx_category (category_id),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Inventory Table
 CREATE TABLE inventory (
-    inventory_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNIQUE,
-    quantity INT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
-);
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL UNIQUE,
+    quantity_on_hand INT NOT NULL DEFAULT 0,
+    reorder_level INT DEFAULT 10,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    INDEX idx_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- shopping_carts table
+-- Shopping Carts Table
 CREATE TABLE shopping_carts (
-    cart_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_customer (customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- cart_items table
+-- Cart Items Table
 CREATE TABLE cart_items (
-    cart_item_id INT AUTO_INCREMENT PRIMARY KEY,
-    cart_id INT,
-    product_id INT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    cart_id INT NOT NULL,
+    product_id INT NOT NULL,
     quantity INT NOT NULL,
-    FOREIGN KEY (cart_id) REFERENCES shopping_carts(cart_id),
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
-);
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES shopping_carts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_cart_product (cart_id, product_id),
+    INDEX idx_cart (cart_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- orders table
+-- Orders Table
 CREATE TABLE orders (
-    order_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    order_number VARCHAR(100) UNIQUE,
+    order_status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+    subtotal DECIMAL(10, 2) NOT NULL,
+    shipping_cost DECIMAL(10, 2) DEFAULT 0,
+    tax_amount DECIMAL(10, 2) DEFAULT 0,
     total_amount DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_customer (customer_id),
+    INDEX idx_status (order_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- order_items table
+-- Order Items Table
 CREATE TABLE order_items (
-    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT,
-    product_id INT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
     quantity INT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id),
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
-);
+    unit_price DECIMAL(10, 2) NOT NULL,
+    item_total DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+    INDEX idx_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Sample Data
-INSERT INTO users (username, password, email) VALUES 
-('john_doe', 'hashed_password1', 'john@example.com'),
-('jane_smith', 'hashed_password2', 'jane@example.com');
+-- Insert sample data
+INSERT INTO categories (category_name, description) VALUES 
+('Electronics', 'Electronic devices and accessories'),
+('Clothing', 'Apparel and fashion items'),
+('Books', 'Physical and digital books');
 
-INSERT INTO categories (category_name) VALUES 
-('Electronics'),
-('Clothing'),
-('Books');
+-- Insert sample products
+INSERT INTO products (category_id, product_name, description, cost_price, selling_price, is_active) VALUES 
+(1, 'Wireless Mouse', 'Ergonomic wireless mouse', 15.00, 29.99, TRUE),
+(1, 'USB-C Cable', 'High-speed USB-C charging cable', 5.00, 12.99, TRUE),
+(2, 'Cotton T-Shirt', 'Comfortable 100% cotton t-shirt', 8.00, 19.99, TRUE),
+(3, 'Programming Book', 'Learn PHP and MySQL development', 20.00, 39.99, TRUE);
 
-INSERT INTO products (product_name, description, price, category_id) VALUES 
-('Laptop', 'A powerful laptop', 999.99, 1),
-('T-shirt', 'A cool t-shirt', 19.99, 2),
-('Novel', 'An interesting novel', 9.99, 3);
+-- Insert inventory for products
+INSERT INTO inventory (product_id, quantity_on_hand, reorder_level) VALUES 
+(1, 50, 10),
+(2, 100, 20),
+(3, 75, 15),
+(4, 30, 5);
 
-INSERT INTO inventory (product_id, quantity) VALUES 
-(1, 10),
-(2, 50),
-(3, 100);
-
-INSERT INTO shopping_carts (user_id) VALUES 
-(1),
-(2);
-
-INSERT INTO cart_items (cart_id, product_id, quantity) VALUES 
-(1, 1, 1),
-(1, 2, 2),
-(2, 3, 1);
-
-INSERT INTO orders (user_id, total_amount) VALUES 
-(1, 1039.97),
-(2, 9.99);
-
-INSERT INTO order_items (order_id, product_id, quantity, price) VALUES 
-(1, 1, 1, 999.99),
-(1, 2, 2, 19.99),
-(2, 3, 1, 9.99);
+-- Insert default admin user (password: password123 hashed with bcrypt)
+INSERT INTO users (email, password_hash, role) VALUES 
+('admin@shop.com', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5YmMxSUmGEJOi', 'admin');
