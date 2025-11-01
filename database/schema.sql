@@ -8,6 +8,14 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('customer', 'admin') DEFAULT 'customer',
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    phone VARCHAR(20) NULL,
+    address TEXT NULL,
+    city VARCHAR(100) NULL,
+    postal_code VARCHAR(20) NULL,
+    country VARCHAR(100) DEFAULT 'Philippines',
+    profile_picture VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -77,7 +85,7 @@ CREATE TABLE orders (
     id INT PRIMARY KEY AUTO_INCREMENT,
     customer_id INT NOT NULL,
     order_number VARCHAR(100) UNIQUE,
-    order_status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+    order_status ENUM('pending', 'shipped', 'completed', 'cancelled') DEFAULT 'pending',
     subtotal DECIMAL(10, 2) NOT NULL,
     shipping_cost DECIMAL(10, 2) DEFAULT 0,
     tax_amount DECIMAL(10, 2) DEFAULT 0,

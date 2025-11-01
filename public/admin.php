@@ -1,7 +1,11 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/../src/config/Config.php';
 require_once __DIR__ . '/../src/helpers/Session.php';
+
+// Set timezone
+date_default_timezone_set(Config::TIMEZONE);
 
 Session::start();
 
@@ -63,6 +67,42 @@ switch ($page) {
         
     case 'delete_user':
         $controller->deleteUser();
+        break;
+        
+    case 'categories':
+        $controller->categories();
+        break;
+        
+    case 'create_category':
+        $controller->createCategory();
+        break;
+        
+    case 'edit_category':
+        $controller->editCategory();
+        break;
+        
+    case 'delete_category':
+        $controller->deleteCategory();
+        break;
+        
+    case 'sales_report':
+        $controller->salesReport();
+        break;
+    
+    case 'expenses':
+        $controller->expenses();
+        break;
+        
+    case 'create_expense':
+        $controller->createExpense();
+        break;
+        
+    case 'edit_expense':
+        $controller->editExpense();
+        break;
+        
+    case 'delete_expense':
+        $controller->deleteExpense();
         break;
         
     case 'dashboard':

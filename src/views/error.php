@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Error - Online Shop';
+$pageTitle = 'Error - Lotus Plushies';
 ob_start();
 ?>
 

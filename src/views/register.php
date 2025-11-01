@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Register - Online Shop';
+$pageTitle = 'Register - Lotus Plushies';
 ob_start();
 
 require_once __DIR__ . '/../helpers/Session.php';

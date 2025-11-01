@@ -58,6 +58,7 @@ class AuthController {
             Session::set('user_id', $user['id']);
             Session::set('email', $user['email']);
             Session::set('role', $user['role']);
+            Session::set('first_name', $user['first_name']);
             Session::setFlash('success', 'Login successful');
             
             if ($user['role'] === 'admin') {

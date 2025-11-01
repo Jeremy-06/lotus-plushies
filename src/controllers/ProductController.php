@@ -18,13 +18,25 @@ class ProductController {
         $categoryId = isset($_GET['category']) ? intval($_GET['category']) : null;
         $search = isset($_GET['search']) ? trim($_GET['search']) : null;
         
+        // Pagination settings
+        $itemsPerPage = 9; // 3x3 grid
+        $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
+        $offset = ($currentPage - 1) * $itemsPerPage;
+        
+        // Get products and total count based on filters
         if ($search) {
-            $products = $this->productModel->search($search);
+            $products = $this->productModel->searchPaginated($search, $itemsPerPage, $offset);
+            $totalProducts = $this->productModel->countSearch($search);
         } elseif ($categoryId) {
-            $products = $this->productModel->getByCategory($categoryId);
+            $products = $this->productModel->getByCategoryPaginated($categoryId, $itemsPerPage, $offset);
+            $totalProducts = $this->productModel->countByCategory($categoryId);
         } else {
-            $products = $this->productModel->getActiveProducts();
+            $products = $this->productModel->getActiveProductsPaginated($itemsPerPage, $offset);
+            $totalProducts = $this->productModel->countActiveProducts();
         }
+        
+        // Calculate total pages
+        $totalPages = ceil($totalProducts / $itemsPerPage);
         
         $categories = $this->categoryModel->getActive();
         

@@ -8,8 +8,11 @@ class Config {
     const DB_PASS = '';
     
     // Application configuration
-    const APP_NAME = 'Online Shop';
+    const APP_NAME = 'Lotus Plushies';
     const BASE_URL = 'http://localhost/IM-final-project/public';
+    
+    // Timezone configuration (adjust to your timezone)
+    const TIMEZONE = 'Asia/Manila'; // Change this to your timezone
     
     // Upload configuration
     const UPLOAD_DIR = __DIR__ . '/../../public/uploads/';

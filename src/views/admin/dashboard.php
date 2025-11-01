@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Admin Dashboard - Online Shop';
+$pageTitle = 'Admin Dashboard - Lotus Plushies';
 ob_start();
 
 require_once __DIR__ . '/../../helpers/Session.php';
@@ -7,101 +7,139 @@ require_once __DIR__ . '/../../helpers/Session.php';
 
 <div class="row mb-4">
     <div class="col-md-12">
-        <h2>Admin Dashboard</h2>
-        <p class="text-muted">Welcome back, <?php echo Session::getEmail(); ?></p>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Total Products</h6>
-                        <h2 class="card-title mb-0"><?php echo $totalProducts; ?></h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-box fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Total Orders</h6>
-                        <h2 class="card-title mb-0"><?php echo $totalOrders; ?></h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Total Customers</h6>
-                        <h2 class="card-title mb-0"><?php echo $totalCustomers; ?></h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-users fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Pending Orders</h6>
-                        <h2 class="card-title mb-0"><?php echo $pendingOrders; ?></h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-clock fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-            
+        <h2 class="mb-3">Admin Dashboard</h2>
+        <div class="welcome-message">
+            <i class="fas fa-hand-sparkles me-2" style="color: var(--purple-medium);"></i>
+            <span class="welcome-text">Welcome back, <strong><?php echo Session::getEmail(); ?></strong></span>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="card dashboard-card dashboard-card-blue">
             <div class="card-body">
-                <h5 class="card-title">Quick Actions</h5>
-                <div class="d-flex gap-2">
-                    <a href="admin.php?page=create_product" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add New Product
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Total Products</h6>
+                        <h2 class="dashboard-card-number"><?php echo $totalProducts; ?></h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-box fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=products" class="btn btn-sm btn-primary">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
                     </a>
-                    <a href="admin.php?page=orders" class="btn btn-success">
-                        <i class="fas fa-list"></i> View Orders
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card dashboard-card dashboard-card-green">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Total Orders</h6>
+                        <h2 class="dashboard-card-number"><?php echo $totalOrders; ?></h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-shopping-cart fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=orders" class="btn btn-sm btn-primary">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
                     </a>
-                    <a href="admin.php?page=customers" class="btn btn-info">
-                        <i class="fas fa-users"></i> View Customers
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card dashboard-card dashboard-card-purple">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Total Customers</h6>
+                        <h2 class="dashboard-card-number"><?php echo $totalCustomers; ?></h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-users fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=customers" class="btn btn-sm btn-primary">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
                     </a>
-                    <a href="admin.php?page=users" class="btn btn-warning">
-                        <i class="fas fa-user-cog"></i> Manage Users
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card dashboard-card dashboard-card-peach">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Pending Orders</h6>
+                        <h2 class="dashboard-card-number"><?php echo $pendingOrders; ?></h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-clock fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=orders&status=pending" class="btn btn-sm btn-primary">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
                     </a>
-                    <a href="index.php" class="btn btn-secondary">
-                        <i class="fas fa-home"></i> Back to Store
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-6">
+        <div class="card dashboard-card dashboard-card-green">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Completed Orders (Sales)</h6>
+                        <h2 class="dashboard-card-number"><?php echo $completedOrders; ?></h2>
+                        <p class="text-muted mb-0 small">Orders marked as received by customers</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=orders&status=completed" class="btn btn-sm btn-success">
+                        View Completed <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card dashboard-card dashboard-card-purple">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="dashboard-card-subtitle">Total Sales Revenue</h6>
+                        <h2 class="dashboard-card-number">₱<?php echo number_format($totalSales, 2); ?></h2>
+                        <p class="text-muted mb-0 small">From completed orders only</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-dollar-sign fa-3x dashboard-card-icon"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="admin.php?page=sales_report" class="btn btn-sm btn-success">
+                        View Details <i class="fas fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
@@ -111,5 +149,5 @@ require_once __DIR__ . '/../../helpers/Session.php';
 
 <?php
 $content = ob_get_clean();
-include __DIR__ . '/../admin_layout';
+include __DIR__ . '/../admin_layout.php';
 ?>

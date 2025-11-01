@@ -57,8 +57,8 @@ class OrderController {
         } else {
             $subtotal = $this->cartModel->getCartTotal($customerId);
         }
-        $shippingCost = 50.00; // Fixed shipping
-        $taxAmount = $subtotal * 0.12; // 12% tax
+        $shippingCost = 0.00; // No shipping - walk-in/pickup
+        $taxAmount = 0.00; // No tax
         $totalAmount = $subtotal + $shippingCost + $taxAmount;
         
         include __DIR__ . '/../views/checkout.php';
@@ -108,8 +108,8 @@ class OrderController {
         } else {
             $subtotal = $this->cartModel->getCartTotal($customerId);
         }
-        $shippingCost = 50.00;
-        $taxAmount = $subtotal * 0.12;
+        $shippingCost = 0.00; // No shipping - walk-in/pickup
+        $taxAmount = 0.00; // No tax
         $totalAmount = $subtotal + $shippingCost + $taxAmount;
         
         // Create order
@@ -173,7 +173,21 @@ class OrderController {
         }
         
         $customerId = Session::getUserId();
-        $orders = $this->orderModel->getCustomerOrders($customerId);
+        $allOrders = $this->orderModel->getCustomerOrders($customerId);
+        $orders = $allOrders; // Keep all orders for badge counts
+        
+        // Apply filter if specified for display
+        if (isset($_GET['filter']) && $_GET['filter'] !== 'all') {
+            $filter = $_GET['filter'];
+            $filteredOrders = array_filter($allOrders, function($order) use ($filter) {
+                // Group processing and delivered into shipped for customer view
+                if ($filter === 'shipped') {
+                    return in_array($order['order_status'], ['processing', 'shipped', 'delivered']);
+                }
+                return $order['order_status'] === $filter;
+            });
+            $orders = $filteredOrders;
+        }
         
         include __DIR__ . '/../views/order_history.php';
     }
@@ -203,5 +217,83 @@ class OrderController {
         }
         $orderItems = $this->orderModel->getOrderItems($orderId);
         include __DIR__ . '/../views/order_detail.php';
+    }
+    
+    public function confirmReceipt() {
+        if (!Session::isLoggedIn()) {
+            Session::setFlash('message', 'Please login first');
+            header('Location: index.php?page=login');
+            exit();
+        }
+        
+        if (!isset($_GET['id'])) {
+            Session::setFlash('message', 'Invalid order');
+            header('Location: index.php?page=order_history');
+            exit();
+        }
+        
+        $orderId = intval($_GET['id']);
+        $customerId = Session::getUserId();
+        
+        // Verify order belongs to customer and mark as completed
+        if ($this->orderModel->markAsCompleted($orderId, $customerId)) {
+            Session::setFlash('success', 'Order marked as received. Thank you!');
+        } else {
+            Session::setFlash('message', 'Failed to update order status');
+        }
+        
+        header('Location: index.php?page=order_history');
+        exit();
+    }
+    
+    public function cancelOrder() {
+        if (!Session::isLoggedIn()) {
+            Session::setFlash('message', 'Please login first');
+            header('Location: index.php?page=login');
+            exit();
+        }
+        
+        if (!isset($_GET['id'])) {
+            Session::setFlash('message', 'Invalid order');
+            header('Location: index.php?page=order_history');
+            exit();
+        }
+        
+        $orderId = intval($_GET['id']);
+        $customerId = Session::getUserId();
+        
+        // Get order details to verify ownership and status
+        $order = $this->orderModel->getOrderDetails($orderId);
+        
+        if (!$order || (int)$order['customer_id'] !== (int)$customerId) {
+            Session::setFlash('message', 'Order not found or unauthorized');
+            header('Location: index.php?page=order_history');
+            exit();
+        }
+        
+        // Only allow cancellation of pending orders
+        if ($order['order_status'] !== 'pending') {
+            Session::setFlash('message', 'Only pending orders can be cancelled');
+            header('Location: index.php?page=order_history');
+            exit();
+        }
+        
+        // Cancel the order and restore inventory
+        if ($this->orderModel->cancelOrder($orderId)) {
+            // Restore inventory for cancelled order
+            $orderItems = $this->orderModel->getOrderItems($orderId);
+            foreach ($orderItems as $item) {
+                $currentQty = $this->productModel->getInventory($item['product_id']);
+                $newQty = $currentQty + $item['quantity'];
+                $this->productModel->updateInventory($item['product_id'], $newQty);
+            }
+            
+            Session::setFlash('success', 'Order cancelled successfully. Inventory has been restored.');
+        } else {
+            Session::setFlash('message', 'Failed to cancel order');
+        }
+        
+        header('Location: index.php?page=order_history');
+        exit();
     }
 }

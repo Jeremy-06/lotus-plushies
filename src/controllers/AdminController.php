@@ -3,22 +3,26 @@
 require_once __DIR__ . '/../helpers/Session.php';
 require_once __DIR__ . '/../helpers/Validation.php';
 require_once __DIR__ . '/../helpers/CSRF.php';
+require_once __DIR__ . '/../helpers/ErrorHandler.php';
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Order.php';
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../models/Expense.php';
 
 class AdminController {
     private $productModel;
     private $categoryModel;
     private $orderModel;
     private $userModel;
+    private $expenseModel;
 
     public function __construct() {
         $this->productModel = new Product();
         $this->categoryModel = new Category();
         $this->orderModel = new Order();
         $this->userModel = new User();
+        $this->expenseModel = new Expense();
     }
 
     public function dashboard() {
@@ -34,11 +38,20 @@ class AdminController {
                 $pendingOrders++;
             }
         }
+        
+        // Get completed orders (sales)
+        $completedOrders = $this->orderModel->getCompletedOrdersCount();
+        $totalSales = $this->orderModel->getCompletedOrdersTotal();
+        
         include __DIR__ . '/../views/admin/dashboard.php';
     }
 
     public function products() {
-        $products = $this->productModel->getWithCategory();
+        $search = $_GET['search'] ?? '';
+        $sortBy = $_GET['sort'] ?? 'created_at';
+        $sortOrder = $_GET['order'] ?? 'DESC';
+        
+        $products = $this->productModel->searchAndSortProducts($search, $sortBy, $sortOrder);
         $categories = $this->categoryModel->getActive();
         include __DIR__ . '/../views/admin/products.php';
     }
@@ -64,30 +77,59 @@ class AdminController {
 
             $imgPath = '';
             if (!empty($_FILES['img_path']['name'])) {
-                $uploadDir = __DIR__ . '/../../public/uploads/';
-                $filename = time() . '_' . basename($_FILES['img_path']['name']);
-                if (move_uploaded_file($_FILES['img_path']['tmp_name'], $uploadDir . $filename)) {
-                    $imgPath = $filename;
+                $uploadResult = $this->handleFileUpload($_FILES['img_path'], 'products');
+                if ($uploadResult['success']) {
+                    $imgPath = $uploadResult['filename'];
+                } else {
+                    Session::setFlash('message', $uploadResult['error']);
+                    header('Location: admin.php?page=create_product');
+                    exit();
                 }
             }
 
-            $created = $this->productModel->create(
-                intval($_POST['category_id']),
-                trim($_POST['product_name']),
-                trim($_POST['description'] ?? ''),
-                floatval($_POST['cost_price']),
-                floatval($_POST['selling_price']),
-                $imgPath
-            );
+            try {
+                $created = $this->productModel->create(
+                    intval($_POST['category_id']),
+                    trim($_POST['product_name']),
+                    trim($_POST['description'] ?? ''),
+                    floatval($_POST['cost_price']),
+                    floatval($_POST['selling_price']),
+                    $imgPath
+                );
 
-            if ($created) {
+                if (!$created) {
+                    throw new Exception('Failed to create product in database');
+                }
+
                 // Apply initial inventory if provided
                 if (isset($_POST['quantity']) && is_numeric($_POST['quantity'])) {
-                    $this->productModel->updateInventory($created, intval($_POST['quantity']));
+                    $quantity = intval($_POST['quantity']);
+                    $this->productModel->updateInventory($created, $quantity);
+                    
+                    // Automatically create expense entry for initial stock
+                    if ($quantity > 0) {
+                        $costPrice = floatval($_POST['cost_price']);
+                        $totalCost = $costPrice * $quantity;
+                        $productName = trim($_POST['product_name']);
+                        $description = "Initial stock for product: {$productName} ({$quantity} units @ ₱{$costPrice} each)";
+                        
+                        $this->expenseModel->create(
+                            date('Y-m-d'), // today's date
+                            'Inventory',
+                            $description,
+                            $totalCost,
+                            'cash',
+                            null, // receipt_number
+                            null, // vendor_name
+                            'Auto-generated expense for initial product stock',
+                            Session::get('user_id')
+                        );
+                    }
                 }
-                Session::setFlash('success', 'Product created');
+                Session::setFlash('success', 'Product created and expense recorded');
                 header('Location: admin.php?page=products');
-            } else {
+            } catch (Exception $e) {
+                ErrorHandler::log('Product creation failed: ' . $e->getMessage(), 'ERROR');
                 Session::setFlash('message', 'Failed to create product');
                 header('Location: admin.php?page=create_product');
             }
@@ -111,27 +153,64 @@ class AdminController {
             }
             $imgPath = null;
             if (!empty($_FILES['img_path']['name'])) {
-                $uploadDir = __DIR__ . '/../../public/uploads/';
-                $filename = time() . '_' . basename($_FILES['img_path']['name']);
-                if (move_uploaded_file($_FILES['img_path']['tmp_name'], $uploadDir . $filename)) {
-                    $imgPath = $filename;
+                $uploadResult = $this->handleFileUpload($_FILES['img_path'], 'products');
+                if ($uploadResult['success']) {
+                    $imgPath = $uploadResult['filename'];
+                } else {
+                    Session::setFlash('message', $uploadResult['error']);
+                    header('Location: admin.php?page=edit_product&id=' . $id);
+                    exit();
                 }
             }
-            $ok = $this->productModel->update(
-                $id,
-                intval($_POST['category_id']),
-                trim($_POST['product_name']),
-                trim($_POST['description'] ?? ''),
-                floatval($_POST['cost_price']),
-                floatval($_POST['selling_price']),
-                $imgPath
-            );
-            if ($ok) {
-                if (isset($_POST['quantity']) && is_numeric($_POST['quantity'])) {
-                    $this->productModel->updateInventory($id, intval($_POST['quantity']));
+            
+            try {
+                $isActive = isset($_POST['is_active']) ? intval($_POST['is_active']) : 1;
+                $ok = $this->productModel->update(
+                    $id,
+                    intval($_POST['category_id']),
+                    trim($_POST['product_name']),
+                    trim($_POST['description'] ?? ''),
+                    floatval($_POST['cost_price']),
+                    floatval($_POST['selling_price']),
+                    $imgPath,
+                    $isActive
+                );
+                
+                if (!$ok) {
+                    throw new Exception('Failed to update product');
                 }
-                Session::setFlash('success', 'Product updated');
-            } else {
+                
+                if (isset($_POST['quantity']) && is_numeric($_POST['quantity'])) {
+                    $newQuantity = intval($_POST['quantity']);
+                    $oldQuantity = $this->productModel->getInventory($id);
+                    
+                    // Update inventory
+                    $this->productModel->updateInventory($id, $newQuantity);
+                    
+                    // If stock increased, record as expense
+                    if ($newQuantity > $oldQuantity) {
+                        $quantityAdded = $newQuantity - $oldQuantity;
+                        $costPrice = floatval($_POST['cost_price']);
+                        $totalCost = $costPrice * $quantityAdded;
+                        $productName = trim($_POST['product_name']);
+                        $description = "Restocking: {$productName} (+{$quantityAdded} units @ ₱{$costPrice} each)";
+                        
+                        $this->expenseModel->create(
+                            date('Y-m-d'), // today's date
+                            'Inventory',
+                            $description,
+                            $totalCost,
+                            'cash',
+                            null, // receipt_number
+                            null, // vendor_name
+                            'Auto-generated expense for product restocking',
+                            Session::get('user_id')
+                        );
+                    }
+                }
+                Session::setFlash('success', 'Product updated and expense recorded (if restocked)');
+            } catch (Exception $e) {
+                ErrorHandler::log('Product update failed: ' . $e->getMessage(), 'ERROR', ['product_id' => $id]);
                 Session::setFlash('message', 'Failed to update product');
             }
             header('Location: admin.php?page=products');
@@ -140,7 +219,7 @@ class AdminController {
         $product = $this->productModel->findById($id);
         $categories = $this->categoryModel->getActive();
         $inventory = $this->productModel->getInventory($id);
-        include __DIR__ . '/../views/admin/product_edit';
+        include __DIR__ . '/../views/admin/product_edit.php';
     }
 
     public function deleteProduct() {
@@ -149,8 +228,17 @@ class AdminController {
             exit();
         }
         $id = intval($_GET['id']);
-        if ($this->productModel->delete($id)) {
-            Session::setFlash('success', 'Product deleted');
+        
+        // Check if product has active order items (pending, processing, or shipped)
+        if ($this->productModel->hasActiveOrderItems($id)) {
+            Session::setFlash('message', 'Cannot delete product. This product has active orders (pending, processing, or shipped). Please wait until all orders are completed or cancelled.');
+            header('Location: admin.php?page=products');
+            exit();
+        }
+        
+        // Use custom delete method that handles order items from completed orders
+        if ($this->productModel->deleteWithOrderItems($id)) {
+            Session::setFlash('success', 'Product deleted successfully');
         } else {
             Session::setFlash('message', 'Failed to delete product');
         }
@@ -159,12 +247,21 @@ class AdminController {
     }
 
     public function orders() {
-        if (isset($_GET['status']) && $_GET['status'] !== '') {
-            $status = $_GET['status'];
+        $search = $_GET['search'] ?? '';
+        $status = $_GET['status'] ?? '';
+        
+        // Get filtered orders for display
+        if (!empty($search)) {
+            $orders = $this->orderModel->searchOrders($search, $status);
+        } elseif (!empty($status)) {
             $orders = $this->orderModel->getOrdersByStatus($status);
         } else {
             $orders = $this->orderModel->getAllOrders();
         }
+        
+        // Get all orders for badge counts
+        $allOrders = $this->orderModel->getAllOrders();
+        
         include __DIR__ . '/../views/admin/orders.php';
     }
 
@@ -206,7 +303,12 @@ class AdminController {
     }
 
     public function users() {
-        $users = $this->userModel->getAllUsers();
+        $search = $_GET['search'] ?? '';
+        $sortBy = $_GET['sort'] ?? 'created_at';
+        $sortOrder = $_GET['order'] ?? 'DESC';
+        $roleFilter = $_GET['role'] ?? '';
+        
+        $users = $this->userModel->searchAndSortUsers($search, $sortBy, $sortOrder, $roleFilter);
         include __DIR__ . '/../views/admin/users.php';
     }
 
@@ -255,5 +357,389 @@ class AdminController {
         }
         header('Location: admin.php?page=users');
         exit();
+    }
+
+    // Category CRUD Methods
+    public function categories() {
+        $pageTitle = 'Manage Categories - Admin';
+        $categories = $this->categoryModel->getAll();
+        include __DIR__ . '/../views/admin/categories.php';
+    }
+
+    public function createCategory() {
+        $pageTitle = 'Create Category - Admin';
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('message', 'Invalid request');
+                header('Location: admin.php?page=categories');
+                exit();
+            }
+            
+            $categoryName = trim($_POST['category_name'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $isActive = isset($_POST['is_active']) ? 1 : 0;
+            
+            if (empty($categoryName)) {
+                Session::setFlash('message', 'Category name is required');
+                header('Location: admin.php?page=create_category');
+                exit();
+            }
+            
+            if ($categoryId = $this->categoryModel->create($categoryName, $description)) {
+                // Update is_active after creation
+                $this->categoryModel->update($categoryId, $categoryName, $description, $isActive);
+                Session::setFlash('success', 'Category created successfully');
+                header('Location: admin.php?page=categories');
+                exit();
+            } else {
+                Session::setFlash('message', 'Failed to create category');
+            }
+        }
+        
+        include __DIR__ . '/../views/admin/category_create.php';
+    }
+
+    public function editCategory() {
+        $pageTitle = 'Edit Category - Admin';
+        
+        if (!isset($_GET['id'])) {
+            header('Location: admin.php?page=categories');
+            exit();
+        }
+        
+        $id = intval($_GET['id']);
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('message', 'Invalid request');
+                header('Location: admin.php?page=edit_category&id=' . $id);
+                exit();
+            }
+            
+            $categoryName = trim($_POST['category_name'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $isActive = isset($_POST['is_active']) ? 1 : 0;
+            
+            if (empty($categoryName)) {
+                Session::setFlash('message', 'Category name is required');
+                header('Location: admin.php?page=edit_category&id=' . $id);
+                exit();
+            }
+            
+            if ($this->categoryModel->update($id, $categoryName, $description, $isActive)) {
+                Session::setFlash('success', 'Category updated successfully');
+                header('Location: admin.php?page=categories');
+                exit();
+            } else {
+                Session::setFlash('message', 'Failed to update category');
+            }
+        }
+        
+        $category = $this->categoryModel->findById($id);
+        if (!$category) {
+            Session::setFlash('message', 'Category not found');
+            header('Location: admin.php?page=categories');
+            exit();
+        }
+        
+        include __DIR__ . '/../views/admin/category_edit.php';
+    }
+
+    public function deleteCategory() {
+        if (!isset($_GET['id'])) {
+            header('Location: admin.php?page=categories');
+            exit();
+        }
+        
+        $id = intval($_GET['id']);
+        
+        if ($this->categoryModel->delete($id)) {
+            Session::setFlash('success', 'Category deleted successfully');
+        } else {
+            Session::setFlash('message', 'Cannot delete category. It may be in use by products.');
+        }
+        
+        header('Location: admin.php?page=categories');
+        exit();
+    }
+    
+    public function salesReport() {
+        // Prevent caching to ensure fresh data
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
+        
+        // Get report type and date parameters
+        $reportType = $_GET['type'] ?? 'daily';
+        
+        // Only use custom dates if we're in custom report mode
+        $customStart = ($reportType === 'custom' && isset($_GET['start_date'])) ? $_GET['start_date'] : '';
+        $customEnd = ($reportType === 'custom' && isset($_GET['end_date'])) ? $_GET['end_date'] : '';
+        
+        // Initialize sales data
+        $salesData = null;
+        $reportTitle = '';
+        $reportPeriod = '';
+        $startDate = '';
+        $endDate = '';
+        $date = null; // Initialize date variable for the view
+        
+        switch ($reportType) {
+            case 'daily':
+                // Always use current date if no specific date is provided
+                $date = isset($_GET['date']) && !empty($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+                $salesData = $this->orderModel->getDailySales($date);
+                $reportTitle = 'Daily Sales Report';
+                $reportPeriod = date('F d, Y', strtotime($date));
+                $startDate = $date . ' 00:00:00';
+                $endDate = $date . ' 23:59:59';
+                break;
+                
+            case 'weekly':
+                $salesData = $this->orderModel->getWeeklySales();
+                $reportTitle = 'Weekly Sales Report';
+                $weekStart = date('M d, Y', strtotime('monday this week'));
+                $weekEnd = date('M d, Y', strtotime('sunday this week'));
+                $reportPeriod = "$weekStart - $weekEnd";
+                $startDate = date('Y-m-d 00:00:00', strtotime('monday this week'));
+                $endDate = date('Y-m-d 23:59:59', strtotime('sunday this week'));
+                break;
+                
+            case 'monthly':
+                $month = $_GET['month'] ?? date('m');
+                $year = $_GET['year'] ?? date('Y');
+                $salesData = $this->orderModel->getMonthlySales($month, $year);
+                $reportTitle = 'Monthly Sales Report';
+                $reportPeriod = date('F Y', strtotime("$year-$month-01"));
+                $startDate = "$year-$month-01 00:00:00";
+                $endDate = date('Y-m-t 23:59:59', strtotime($startDate));
+                break;
+                
+            case 'yearly':
+                $year = $_GET['year'] ?? date('Y');
+                $salesData = $this->orderModel->getYearlySales($year);
+                $reportTitle = 'Yearly Sales Report';
+                $reportPeriod = $year;
+                $startDate = "$year-01-01 00:00:00";
+                $endDate = "$year-12-31 23:59:59";
+                break;
+                
+            case 'custom':
+                if ($customStart && $customEnd) {
+                    $salesData = $this->orderModel->getCustomRangeSales($customStart, $customEnd);
+                    $reportTitle = 'Custom Range Sales Report';
+                    $reportPeriod = date('M d, Y', strtotime($customStart)) . ' - ' . date('M d, Y', strtotime($customEnd));
+                    $startDate = date('Y-m-d 00:00:00', strtotime($customStart));
+                    $endDate = date('Y-m-d 23:59:59', strtotime($customEnd));
+                } else {
+                    // Default to today if no dates provided
+                    $salesData = $this->orderModel->getDailySales();
+                    $reportTitle = 'Sales Report';
+                    $reportPeriod = 'Please select a date range';
+                    $startDate = date('Y-m-d 00:00:00');
+                    $endDate = date('Y-m-d 23:59:59');
+                }
+                break;
+        }
+        
+        // Get top selling products for the period
+        $topProducts = $this->orderModel->getTopSellingProducts($startDate, $endDate, 10);
+        
+        // Get orders list for the period
+        $orders = $this->orderModel->getSalesOrdersList($startDate, $endDate);
+        
+        // Get expenses for the period
+        $expenseData = $this->expenseModel->getExpensesByPeriod(date('Y-m-d', strtotime($startDate)), date('Y-m-d', strtotime($endDate)));
+        $expensesByCategory = $this->expenseModel->getExpensesByCategoryPeriod(date('Y-m-d', strtotime($startDate)), date('Y-m-d', strtotime($endDate)));
+        
+        // Calculate profit
+        $totalRevenue = $salesData['total_sales'] ?? 0;
+        $totalExpenses = $expenseData['total_expenses'] ?? 0;
+        $netProfit = $totalRevenue - $totalExpenses;
+        
+        include __DIR__ . '/../views/admin/sales_report.php';
+    }
+    
+    // Expense Management Methods
+    public function expenses() {
+        $search = $_GET['search'] ?? '';
+        $sortBy = $_GET['sort'] ?? 'expense_date';
+        $sortOrder = $_GET['order'] ?? 'DESC';
+        $categoryFilter = $_GET['category'] ?? '';
+        
+        $expenses = $this->expenseModel->searchAndSort($search, $sortBy, $sortOrder, $categoryFilter);
+        $categories = $this->expenseModel->getCategories();
+        
+        include __DIR__ . '/../views/admin/expenses.php';
+    }
+    
+    public function createExpense() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('message', 'Invalid request');
+                header('Location: admin.php?page=create_expense');
+                exit();
+            }
+            
+            $expenseDate = $_POST['expense_date'] ?? date('Y-m-d');
+            $category = trim($_POST['category'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $amount = floatval($_POST['amount'] ?? 0);
+            $paymentMethod = $_POST['payment_method'] ?? 'cash';
+            $receiptNumber = trim($_POST['receipt_number'] ?? '');
+            $vendorName = trim($_POST['vendor_name'] ?? '');
+            $notes = trim($_POST['notes'] ?? '');
+            $createdBy = Session::getUserId();
+            
+            if (empty($category) || empty($description) || $amount <= 0) {
+                Session::setFlash('message', 'Please fill in all required fields with valid data');
+                header('Location: admin.php?page=create_expense');
+                exit();
+            }
+            
+            if ($this->expenseModel->create($expenseDate, $category, $description, $amount, $paymentMethod, $receiptNumber, $vendorName, $notes, $createdBy)) {
+                Session::setFlash('success', 'Expense recorded successfully');
+                header('Location: admin.php?page=expenses');
+            } else {
+                Session::setFlash('message', 'Failed to record expense');
+                header('Location: admin.php?page=create_expense');
+            }
+            exit();
+        }
+        
+        $categories = $this->expenseModel->getCategories();
+        include __DIR__ . '/../views/admin/expense_create.php';
+    }
+    
+    public function editExpense() {
+        if (!isset($_GET['id'])) {
+            header('Location: admin.php?page=expenses');
+            exit();
+        }
+        
+        $id = intval($_GET['id']);
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('message', 'Invalid request');
+                header('Location: admin.php?page=edit_expense&id=' . $id);
+                exit();
+            }
+            
+            $expenseDate = $_POST['expense_date'] ?? date('Y-m-d');
+            $category = trim($_POST['category'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $amount = floatval($_POST['amount'] ?? 0);
+            $paymentMethod = $_POST['payment_method'] ?? 'cash';
+            $receiptNumber = trim($_POST['receipt_number'] ?? '');
+            $vendorName = trim($_POST['vendor_name'] ?? '');
+            $notes = trim($_POST['notes'] ?? '');
+            
+            if (empty($category) || empty($description) || $amount <= 0) {
+                Session::setFlash('message', 'Please fill in all required fields with valid data');
+                header('Location: admin.php?page=edit_expense&id=' . $id);
+                exit();
+            }
+            
+            if ($this->expenseModel->update($id, $expenseDate, $category, $description, $amount, $paymentMethod, $receiptNumber, $vendorName, $notes)) {
+                Session::setFlash('success', 'Expense updated successfully');
+                header('Location: admin.php?page=expenses');
+            } else {
+                Session::setFlash('message', 'Failed to update expense');
+                header('Location: admin.php?page=edit_expense&id=' . $id);
+            }
+            exit();
+        }
+        
+        $expense = $this->expenseModel->findById($id);
+        $categories = $this->expenseModel->getCategories();
+        
+        if (!$expense) {
+            Session::setFlash('message', 'Expense not found');
+            header('Location: admin.php?page=expenses');
+            exit();
+        }
+        
+        include __DIR__ . '/../views/admin/expense_edit.php';
+    }
+    
+    public function deleteExpense() {
+        if (!isset($_GET['id'])) {
+            header('Location: admin.php?page=expenses');
+            exit();
+        }
+        
+        $id = intval($_GET['id']);
+        
+        if ($this->expenseModel->delete($id)) {
+            Session::setFlash('success', 'Expense deleted successfully');
+        } else {
+            Session::setFlash('message', 'Failed to delete expense');
+        }
+        
+        header('Location: admin.php?page=expenses');
+        exit();
+    }
+    
+    /**
+     * Handle file upload with proper error handling
+     * 
+     * @param array $file $_FILES array element
+     * @param string $subdir Subdirectory in uploads folder
+     * @param array $allowedTypes Allowed MIME types
+     * @param int $maxSize Max file size in bytes
+     * @return array Result with success status, filename or error message
+     */
+    private function handleFileUpload($file, $subdir = '', $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], $maxSize = 5242880) {
+        try {
+            // Check for upload errors
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $error = ErrorHandler::getFileUploadError($file['error']);
+                ErrorHandler::log("File upload error: {$error}", 'WARNING', ['file' => $file['name']]);
+                return ['success' => false, 'error' => $error];
+            }
+            
+            // Check file size
+            if ($file['size'] > $maxSize) {
+                return ['success' => false, 'error' => 'File size exceeds limit of ' . ($maxSize / 1024 / 1024) . 'MB'];
+            }
+            
+            // Check MIME type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            
+            if (!in_array($mimeType, $allowedTypes)) {
+                return ['success' => false, 'error' => 'Invalid file type. Only images are allowed.'];
+            }
+            
+            // Generate unique filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+            
+            // Prepare upload directory
+            $uploadDir = __DIR__ . '/../../public/uploads/';
+            if (!empty($subdir)) {
+                $uploadDir .= $subdir . '/';
+            }
+            
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            // Move uploaded file
+            $destination = $uploadDir . $filename;
+            if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                ErrorHandler::log('Failed to move uploaded file', 'ERROR', ['destination' => $destination]);
+                return ['success' => false, 'error' => 'Failed to save uploaded file'];
+            }
+            
+            return ['success' => true, 'filename' => (!empty($subdir) ? $subdir . '/' : '') . $filename];
+            
+        } catch (Exception $e) {
+            ErrorHandler::log('File upload exception: ' . $e->getMessage(), 'ERROR');
+            return ['success' => false, 'error' => 'An error occurred during file upload'];
+        }
     }
 }

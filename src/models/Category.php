@@ -29,4 +29,29 @@ class Category extends BaseModel {
         $result = mysqli_query($this->conn, $sql);
         return mysqli_fetch_all($result, MYSQLI_ASSOC);
     }
+    
+    public function getAll() {
+        $sql = "SELECT * FROM categories ORDER BY category_name ASC";
+        $result = mysqli_query($this->conn, $sql);
+        return mysqli_fetch_all($result, MYSQLI_ASSOC);
+    }
+    
+    public function delete($id) {
+        // Check if category is used by any products
+        $checkSql = "SELECT COUNT(*) as count FROM products WHERE category_id = ?";
+        $checkStmt = mysqli_prepare($this->conn, $checkSql);
+        mysqli_stmt_bind_param($checkStmt, 'i', $id);
+        mysqli_stmt_execute($checkStmt);
+        $result = mysqli_stmt_get_result($checkStmt);
+        $row = mysqli_fetch_assoc($result);
+        
+        if ($row['count'] > 0) {
+            return false; // Cannot delete category with associated products
+        }
+        
+        $sql = "DELETE FROM categories WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $id);
+        return mysqli_stmt_execute($stmt);
+    }
 }

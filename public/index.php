@@ -5,6 +5,7 @@ ini_set('display_errors', 1);
 
 session_start();
 
+require_once __DIR__ . '/../src/config/Config.php';
 require_once __DIR__ . '/../src/helpers/Session.php';
 require_once __DIR__ . '/../src/controllers/ProductController.php';
 require_once __DIR__ . '/../src/controllers/CartController.php';
@@ -13,6 +14,9 @@ require_once __DIR__ . '/../src/controllers/AuthController.php';
 require_once __DIR__ . '/../src/controllers/UserController.php';
 require_once __DIR__ . '/../src/models/Product.php';
 require_once __DIR__ . '/../src/models/Category.php';
+
+// Set timezone
+date_default_timezone_set(Config::TIMEZONE);
 
 Session::start();
 
@@ -94,10 +98,25 @@ switch ($page) {
         $controller = new OrderController();
         $controller->detail();
         break;
+    
+    case 'order':
+        $controller = new OrderController();
+        if ($action === 'confirm_receipt') {
+            $controller->confirmReceipt();
+        } elseif ($action === 'cancel') {
+            $controller->cancelOrder();
+        }
+        break;
         
     case 'profile':
         $controller = new UserController();
-        $controller->profile();
+        if ($action === 'update') {
+            $controller->updateProfile();
+        } elseif ($action === 'change_password') {
+            $controller->changePassword();
+        } else {
+            $controller->profile();
+        }
         break;
         
     case 'home':

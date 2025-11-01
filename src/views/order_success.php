@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Order Success - Online Shop';
+$pageTitle = 'Order Success - Lotus Plushies';
 ob_start();
 
 require_once __DIR__ . '/../helpers/Session.php';

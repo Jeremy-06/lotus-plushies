@@ -60,6 +60,20 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
                         <label for="quantity">Quantity</label>
                         <input type="number" class="form-control" id="quantity" name="quantity" 
                                value="<?php echo $inventory; ?>" required>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Note:</strong> If you increase the quantity, an expense will be automatically recorded 
+                            (Cost Price × Additional Stock) under the "Inventory" category.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="is_active">Status</label>
+                        <select class="form-control" id="is_active" name="is_active" required>
+                            <option value="1" <?php echo ($product['is_active'] == 1) ? 'selected' : ''; ?>>Active</option>
+                            <option value="0" <?php echo ($product['is_active'] == 0) ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Inactive products won't be visible to customers</small>
                     </div>
                     
                     <div class="form-group mb-3">
@@ -87,5 +101,5 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
 
 <?php
 $content = ob_get_clean();
-include __DIR__ . '/../admin_layout';
+include __DIR__ . '/../admin_layout.php';
 ?>

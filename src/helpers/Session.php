@@ -58,4 +58,8 @@ class Session {
     public static function getEmail() {
         return self::get('email');
     }
+    
+    public static function getFirstName() {
+        return self::get('first_name');
+    }
 }

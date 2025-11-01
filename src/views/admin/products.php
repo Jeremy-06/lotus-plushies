@@ -5,24 +5,42 @@ ob_start();
 require_once __DIR__ . '/../../helpers/Session.php';
 ?>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h2>Manage Products</h2>
-    </div>
-    <div class="col-md-6 text-end">
-        <a href="admin.php?page=create_product" class="btn btn-success">
-            <i class="fas fa-plus"></i> Add New Product
-        </a>
+<div class="row mb-4 mt-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0" style="margin-top: 0;">Manage Products</h2>
+            <a href="admin.php?page=create_product" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add New Product
+            </a>
+        </div>
     </div>
 </div>
 
 <div class="row mb-3">
-    <div class="col-md-6">
-        <form action="admin.php" method="GET" class="d-flex">
+    <div class="col-md-12">
+        <form action="admin.php" method="GET" class="d-flex align-items-center gap-2">
             <input type="hidden" name="page" value="products">
-            <input class="form-control me-2" type="search" placeholder="Search products" name="search" 
-                   value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-            <button class="btn btn-outline-success" type="submit">Search</button>
+            <input type="hidden" name="sort" value="<?php echo htmlspecialchars($_GET['sort'] ?? 'created_at'); ?>">
+            <input type="hidden" name="order" value="<?php echo htmlspecialchars($_GET['order'] ?? 'DESC'); ?>">
+            
+            <div class="input-group" style="max-width: 400px;">
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Search products..." 
+                       value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
+                       style="border: 2px solid #8b5fbf; border-radius: 25px 0 0 25px; padding: 10px 20px;">
+                <button type="submit" class="btn" style="background: #8b5fbf; color: white; border: 2px solid #8b5fbf; border-radius: 0 25px 25px 0; padding: 10px 20px;">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            
+            <?php if (isset($_GET['search']) && $_GET['search'] !== ''): ?>
+                <a href="admin.php?page=products&sort=<?php echo htmlspecialchars($_GET['sort'] ?? 'created_at'); ?>&order=<?php echo htmlspecialchars($_GET['order'] ?? 'DESC'); ?>" 
+                   class="btn" style="background: #6c757d; color: white; border-radius: 25px; padding: 10px 20px; text-decoration: none;">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            <?php endif; ?>
         </form>
     </div>
 </div>
@@ -33,11 +51,31 @@ require_once __DIR__ . '/../../helpers/Session.php';
         <thead class="table-dark">
             <tr>
                 <th>Image</th>
-                <th>Product Name</th>
-                <th>Category</th>
-                <th>Cost Price</th>
-                <th>Selling Price</th>
-                <th>Stock</th>
+                <th>
+                    <a href="admin.php?page=products&sort=product_name&order=<?php echo ($_GET['sort'] ?? '') === 'product_name' && ($_GET['order'] ?? 'DESC') === 'ASC' ? 'DESC' : 'ASC'; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" class="text-white text-decoration-none">
+                        Product Name <?php if (($_GET['sort'] ?? '') === 'product_name') echo ($_GET['order'] ?? 'DESC') === 'ASC' ? '▲' : '▼'; ?>
+                    </a>
+                </th>
+                <th>
+                    <a href="admin.php?page=products&sort=category_name&order=<?php echo ($_GET['sort'] ?? '') === 'category_name' && ($_GET['order'] ?? 'DESC') === 'ASC' ? 'DESC' : 'ASC'; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" class="text-white text-decoration-none">
+                        Category <?php if (($_GET['sort'] ?? '') === 'category_name') echo ($_GET['order'] ?? 'DESC') === 'ASC' ? '▲' : '▼'; ?>
+                    </a>
+                </th>
+                <th>
+                    <a href="admin.php?page=products&sort=cost_price&order=<?php echo ($_GET['sort'] ?? '') === 'cost_price' && ($_GET['order'] ?? 'DESC') === 'ASC' ? 'DESC' : 'ASC'; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" class="text-white text-decoration-none">
+                        Cost Price <?php if (($_GET['sort'] ?? '') === 'cost_price') echo ($_GET['order'] ?? 'DESC') === 'ASC' ? '▲' : '▼'; ?>
+                    </a>
+                </th>
+                <th>
+                    <a href="admin.php?page=products&sort=selling_price&order=<?php echo ($_GET['sort'] ?? '') === 'selling_price' && ($_GET['order'] ?? 'DESC') === 'ASC' ? 'DESC' : 'ASC'; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" class="text-white text-decoration-none">
+                        Selling Price <?php if (($_GET['sort'] ?? '') === 'selling_price') echo ($_GET['order'] ?? 'DESC') === 'ASC' ? '▲' : '▼'; ?>
+                    </a>
+                </th>
+                <th>
+                    <a href="admin.php?page=products&sort=quantity_on_hand&order=<?php echo ($_GET['sort'] ?? '') === 'quantity_on_hand' && ($_GET['order'] ?? 'DESC') === 'ASC' ? 'DESC' : 'ASC'; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>" class="text-white text-decoration-none">
+                        Stock <?php if (($_GET['sort'] ?? '') === 'quantity_on_hand') echo ($_GET['order'] ?? 'DESC') === 'ASC' ? '▲' : '▼'; ?>
+                    </a>
+                </th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -47,10 +85,11 @@ require_once __DIR__ . '/../../helpers/Session.php';
             <tr>
                 <td>
                     <?php if ($product['img_path']): ?>
-                        <img src="uploads/<?php echo htmlspecialchars($product['img_path']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>" style="width: 50px; height: 50px; object-fit: cover;">
+                        <img src="uploads/<?php echo htmlspecialchars($product['img_path']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                     <?php else: ?>
-                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 10px;">
-                            No Image
+                        <div class="d-flex align-items-center justify-content-center position-relative" style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.15) 0%, rgba(255, 159, 191, 0.2) 100%); overflow: hidden;">
+                            <div class="position-absolute" style="top: -30%; right: -20%; width: 30px; height: 30px; background: rgba(139, 95, 191, 0.2); border-radius: 50%; filter: blur(10px);"></div>
+                            <i class="fas fa-box-open" style="font-size: 1.5rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
                         </div>
                     <?php endif; ?>
                 </td>
@@ -75,12 +114,21 @@ require_once __DIR__ . '/../../helpers/Session.php';
                     <?php endif; ?>
                 </td>
                 <td>
-                    <a href="admin.php?page=edit_product&id=<?php echo $product['id']; ?>" class="btn btn-sm btn-primary">
-                        <i class="fas fa-edit"></i> Edit
-                    </a>
-                    <a href="admin.php?page=delete_product&id=<?php echo $product['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this product?')">
-                        <i class="fas fa-trash"></i> Delete
-                    </a>
+                    <div class="btn-group" role="group">
+                        <a href="admin.php?page=edit_product&id=<?php echo $product['id']; ?>" 
+                           class="btn btn-sm" 
+                           style="background: linear-gradient(135deg, #b19cd9 0%, #d6b6ff 100%); color: white; border: none; border-radius: 20px 0 0 20px; padding: 8px 16px;"
+                           title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="admin.php?page=delete_product&id=<?php echo $product['id']; ?>" 
+                           class="btn btn-sm" 
+                           style="background: #dc3545; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;"
+                           title="Delete"
+                           onclick="return confirm('Are you sure you want to delete this product?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -95,5 +143,5 @@ require_once __DIR__ . '/../../helpers/Session.php';
 
 <?php
 $content = ob_get_clean();
-include __DIR__ . '/../admin_layout';
+include __DIR__ . '/../admin_layout.php';
 ?>

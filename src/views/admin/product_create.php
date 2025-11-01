@@ -80,6 +80,11 @@ Session::remove('form_data');
                         <input type="number" class="form-control" id="quantity" name="quantity" 
                                placeholder="0" 
                                value="<?php echo $formData['quantity'] ?? '0'; ?>" required>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Note:</strong> An expense will be automatically recorded if quantity > 0 
+                            (Cost Price × Quantity) under the "Inventory" category.
+                        </small>
                     </div>
                     
                     <div class="form-group mb-3">
@@ -105,5 +110,5 @@ Session::remove('form_data');
 
 <?php
 $content = ob_get_clean();
-include __DIR__ . '/../admin_layout';
+include __DIR__ . '/../admin_layout.php';
 ?>
