@@ -9,7 +9,7 @@ class Config {
     
     // Application configuration
     const APP_NAME = 'Lotus Plushies';
-    const BASE_URL = 'http://localhost/IM-final-project/public';
+    const BASE_URL = 'http://localhost/lotus-plushies/public';
     
     // Timezone configuration (adjust to your timezone)
     const TIMEZONE = 'Asia/Manila'; // Change this to your timezone

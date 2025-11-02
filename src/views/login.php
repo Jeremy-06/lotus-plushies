@@ -17,7 +17,7 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                 <h3 class="card-title text-center mb-4">Login</h3>
                 
                 <!-- Updated form action to use full path -->
-                <form action="/IM-final-project/public/index.php?page=login&action=process" method="POST">
+                <form action="/lotus-plushies/public/index.php?page=login&action=process" method="POST">
                     <?php echo CSRF::getTokenField(); ?>
                     
                     <div class="form-outline mb-4">
