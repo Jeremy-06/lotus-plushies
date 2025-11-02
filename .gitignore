@@ -1,6 +1,6 @@
-# Uploads
-/public/uploads/*
-!/public/uploads/.gitkeep
+# Uploads - keep structure but ignore profile pictures only
+/public/uploads/profiles/*
+!/public/uploads/profiles/.gitkeep
 
 # IDE
 .vscode/

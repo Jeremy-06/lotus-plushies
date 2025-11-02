@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/Session.php';
 require_once __DIR__ . '/../helpers/Validation.php';
 require_once __DIR__ . '/../helpers/CSRF.php';
 require_once __DIR__ . '/../helpers/ErrorHandler.php';
+require_once __DIR__ . '/../helpers/FileUpload.php';
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Order.php';
@@ -75,18 +76,9 @@ class AdminController {
                 exit();
             }
 
+            // Create product first to get the product ID
             $imgPath = '';
-            if (!empty($_FILES['img_path']['name'])) {
-                $uploadResult = $this->handleFileUpload($_FILES['img_path'], 'products');
-                if ($uploadResult['success']) {
-                    $imgPath = $uploadResult['filename'];
-                } else {
-                    Session::setFlash('message', $uploadResult['error']);
-                    header('Location: admin.php?page=create_product');
-                    exit();
-                }
-            }
-
+            
             try {
                 $created = $this->productModel->create(
                     intval($_POST['category_id']),
@@ -99,6 +91,27 @@ class AdminController {
 
                 if (!$created) {
                     throw new Exception('Failed to create product in database');
+                }
+                
+                // Now handle image upload with the product ID
+                if (!empty($_FILES['img_path']['name'])) {
+                    $uploadResult = FileUpload::uploadProductImage($_FILES['img_path'], $created);
+                    if ($uploadResult['success']) {
+                        $imgPath = 'products/' . $uploadResult['filename'];
+                        // Update product with image path
+                        $this->productModel->update(
+                            $created,
+                            intval($_POST['category_id']),
+                            trim($_POST['product_name']),
+                            trim($_POST['description'] ?? ''),
+                            floatval($_POST['cost_price']),
+                            floatval($_POST['selling_price']),
+                            $imgPath
+                        );
+                    } else {
+                        // Log error but don't fail product creation
+                        ErrorHandler::log('Product image upload failed: ' . $uploadResult['error'], 'WARNING', ['product_id' => $created]);
+                    }
                 }
 
                 // Apply initial inventory if provided
@@ -151,11 +164,16 @@ class AdminController {
                 header('Location: admin.php?page=edit_product&id=' . $id);
                 exit();
             }
+            
+            // Get current product data for old image
+            $currentProduct = $this->productModel->findById($id);
             $imgPath = null;
+            
             if (!empty($_FILES['img_path']['name'])) {
-                $uploadResult = $this->handleFileUpload($_FILES['img_path'], 'products');
+                $oldImagePath = $currentProduct['img_path'] ?? null;
+                $uploadResult = FileUpload::uploadProductImage($_FILES['img_path'], $id, $oldImagePath);
                 if ($uploadResult['success']) {
-                    $imgPath = $uploadResult['filename'];
+                    $imgPath = 'products/' . $uploadResult['filename'];
                 } else {
                     Session::setFlash('message', $uploadResult['error']);
                     header('Location: admin.php?page=edit_product&id=' . $id);
@@ -682,64 +700,5 @@ class AdminController {
         exit();
     }
     
-    /**
-     * Handle file upload with proper error handling
-     * 
-     * @param array $file $_FILES array element
-     * @param string $subdir Subdirectory in uploads folder
-     * @param array $allowedTypes Allowed MIME types
-     * @param int $maxSize Max file size in bytes
-     * @return array Result with success status, filename or error message
-     */
-    private function handleFileUpload($file, $subdir = '', $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], $maxSize = 5242880) {
-        try {
-            // Check for upload errors
-            if ($file['error'] !== UPLOAD_ERR_OK) {
-                $error = ErrorHandler::getFileUploadError($file['error']);
-                ErrorHandler::log("File upload error: {$error}", 'WARNING', ['file' => $file['name']]);
-                return ['success' => false, 'error' => $error];
-            }
-            
-            // Check file size
-            if ($file['size'] > $maxSize) {
-                return ['success' => false, 'error' => 'File size exceeds limit of ' . ($maxSize / 1024 / 1024) . 'MB'];
-            }
-            
-            // Check MIME type
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mimeType = finfo_file($finfo, $file['tmp_name']);
-            finfo_close($finfo);
-            
-            if (!in_array($mimeType, $allowedTypes)) {
-                return ['success' => false, 'error' => 'Invalid file type. Only images are allowed.'];
-            }
-            
-            // Generate unique filename
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
-            
-            // Prepare upload directory
-            $uploadDir = __DIR__ . '/../../public/uploads/';
-            if (!empty($subdir)) {
-                $uploadDir .= $subdir . '/';
-            }
-            
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            
-            // Move uploaded file
-            $destination = $uploadDir . $filename;
-            if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                ErrorHandler::log('Failed to move uploaded file', 'ERROR', ['destination' => $destination]);
-                return ['success' => false, 'error' => 'Failed to save uploaded file'];
-            }
-            
-            return ['success' => true, 'filename' => (!empty($subdir) ? $subdir . '/' : '') . $filename];
-            
-        } catch (Exception $e) {
-            ErrorHandler::log('File upload exception: ' . $e->getMessage(), 'ERROR');
-            return ['success' => false, 'error' => 'An error occurred during file upload'];
-        }
-    }
+
 }

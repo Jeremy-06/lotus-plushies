@@ -1,0 +1,2 @@
+# This file ensures the products directory exists in Git
+# Product images are tracked in Git as they're part of the application's demo data

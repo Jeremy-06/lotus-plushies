@@ -16,8 +16,10 @@ class Config {
     
     // Upload configuration
     const UPLOAD_DIR = __DIR__ . '/../../public/uploads/';
+    const UPLOAD_PRODUCTS_DIR = __DIR__ . '/../../public/uploads/products/';
+    const UPLOAD_PROFILES_DIR = __DIR__ . '/../../public/uploads/profiles/';
     const MAX_FILE_SIZE = 5242880; // 5MB
-    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif'];
+    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     
     // Pagination
     const ITEMS_PER_PAGE = 12;
