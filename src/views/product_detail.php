@@ -20,24 +20,86 @@ require_once __DIR__ . '/../helpers/CSRF.php';
     <div class="col-lg-6">
         <div class="card shadow-sm" style="border: none; border-radius: 20px; overflow: hidden; position: sticky; top: 20px;">
             <div class="card-body p-0">
-                <?php if ($product['img_path']): ?>
-                    <div style="background: #f8f9fa; padding: 2rem; display: flex; align-items: center; justify-content: center; min-height: 500px;">
-                        <img src="uploads/<?php echo htmlspecialchars($product['img_path']); ?>" 
-                             class="img-fluid" 
-                             alt="<?php echo htmlspecialchars($product['product_name']); ?>"
-                             style="max-height: 500px; width: 100%; object-fit: contain; border-radius: 15px;">
+                <?php 
+                // Determine which images to display
+                $hasImages = !empty($productImages);
+                $displayImages = $hasImages ? $productImages : [];
+                
+                // Fallback to old img_path if no images in product_images table
+                if (!$hasImages && !empty($product['img_path'])) {
+                    $displayImages = [['image_path' => $product['img_path'], 'is_primary' => 1]];
+                    $hasImages = true;
+                }
+                ?>
+                
+                <?php if ($hasImages): ?>
+                    <!-- Simple Product Image Gallery -->
+                    <div class="simple-image-gallery">
+                        <!-- Main Image Display -->
+                        <div class="main-image-container" style="position: relative; background: #f8f9fa; border-radius: 15px; overflow: hidden; min-height: 500px; border: 2px solid #e9ecef;">
+                            <!-- Navigation Arrows -->
+                            <?php if (count($displayImages) > 1): ?>
+                            <button class="nav-arrow nav-prev" onclick="navigateImage(-1)" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(139, 95, 191, 0.9); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="nav-arrow nav-next" onclick="navigateImage(1)" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(139, 95, 191, 0.9); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <?php endif; ?>
+
+                            <!-- Image Counter -->
+                            <div class="image-counter" style="position: absolute; top: 15px; right: 15px; background: var(--purple-dark); color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; z-index: 10; box-shadow: 0 2px 8px rgba(139, 95, 191, 0.3);">
+                                <span id="currentImageIndex">1</span> / <?php echo count($displayImages); ?>
+                            </div>
+
+                            <!-- Main Image -->
+                            <div class="image-wrapper" style="width: 100%; height: 500px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                                <img id="mainProductImage"
+                                     src="uploads/<?php echo htmlspecialchars($displayImages[0]['image_path']); ?>"
+                                     class="main-image"
+                                     alt="<?php echo htmlspecialchars($product['product_name']); ?>"
+                                     style="max-width: 100%; max-height: 100%; object-fit: contain; transition: all 0.5s ease;">
+                            </div>
+
+                            <!-- Loading Indicator -->
+                            <div class="image-loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 5;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Simple Thumbnail Gallery -->
+                        <?php if (count($displayImages) > 1): ?>
+                        <div class="thumbnail-gallery-container" style="margin-top: 20px;">
+                            <div class="thumbnail-gallery" id="thumbnailGallery" style="display: flex; gap: 12px; overflow-x: auto; padding: 10px 5px; scrollbar-width: thin; scroll-behavior: smooth;">
+                                <?php foreach ($displayImages as $index => $image): ?>
+                                    <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>"
+                                         onclick="changeMainImage(<?php echo $index; ?>, this)"
+                                         data-index="<?php echo $index; ?>"
+                                         style="min-width: 90px; height: 90px; border: 3px solid <?php echo $index === 0 ? 'var(--purple-dark)' : 'transparent'; ?>; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; position: relative; flex-shrink: 0;">
+                                        <img src="uploads/<?php echo htmlspecialchars($image['image_path']); ?>"
+                                             alt="Thumbnail <?php echo $index + 1; ?>"
+                                             style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <div class="d-flex align-items-center justify-content-center position-relative" style="height: 500px; border-radius: 15px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.15) 0%, rgba(255, 159, 191, 0.2) 100%); overflow: hidden;">
-                        <!-- Decorative background circles -->
-                        <div class="position-absolute" style="top: -20%; right: -10%; width: 250px; height: 250px; background: rgba(139, 95, 191, 0.15); border-radius: 50%; filter: blur(60px);"></div>
-                        <div class="position-absolute" style="bottom: -20%; left: -10%; width: 200px; height: 200px; background: rgba(255, 159, 191, 0.2); border-radius: 50%; filter: blur(50px);"></div>
-                        
-                        <div class="position-relative text-center">
-                            <div class="mb-4" style="animation: float 3s ease-in-out infinite;">
-                                <i class="fas fa-box-open" style="font-size: 6rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                    <div class="no-image-showcase" style="height: 550px; border-radius: 25px; background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); display: flex; align-items-center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);">
+                        <!-- Enhanced Decorative Elements -->
+                        <div class="no-image-bg-1" style="position: absolute; top: -30%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(139, 95, 191, 0.1) 0%, transparent 70%); border-radius: 50%; animation: float-slow 6s ease-in-out infinite;"></div>
+                        <div class="no-image-bg-2" style="position: absolute; bottom: -30%; left: -20%; width: 250px; height: 250px; background: radial-gradient(circle, rgba(255, 159, 191, 0.1) 0%, transparent 70%); border-radius: 50%; animation: float-slow 8s ease-in-out infinite reverse;"></div>
+                        <div class="no-image-bg-3" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%); border-radius: 50%; animation: pulse-glow 4s ease-in-out infinite;"></div>
+
+                        <div class="no-image-content" style="position: relative; text-align: center; z-index: 2;">
+                            <div class="no-image-icon" style="margin-bottom: 2rem; animation: bounce-in 1s ease-out;">
+                                <i class="fas fa-images" style="font-size: 5rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 10px 30px rgba(139, 95, 191, 0.3));"></i>
                             </div>
-                            <p class="mb-0 fw-bold h4" style="color: var(--purple-medium); letter-spacing: 1px;">No Image Available</p>
+                            <h3 class="no-image-title" style="color: var(--purple-medium); font-weight: 700; font-size: 2rem; margin-bottom: 1rem; letter-spacing: 1px;">No Images Available</h3>
+                            <p class="no-image-subtitle" style="color: var(--text-secondary); font-size: 1.1rem; max-width: 300px; margin: 0 auto; line-height: 1.6;">Beautiful product images will be displayed here once uploaded</p>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -187,39 +249,216 @@ require_once __DIR__ . '/../helpers/CSRF.php';
 </div>
 
 <style>
-.qty-btn {
+/* Simple Product Image Gallery Styles */
+
+/* Navigation Arrows */
+.nav-arrow {
     transition: all 0.3s ease;
 }
 
-.qty-btn:hover {
-    background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%) !important;
-    color: white !important;
+.nav-arrow:hover:not(:disabled) {
+    background: rgba(139, 95, 191, 1) !important;
+    transform: translateY(-50%) scale(1.1) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+.nav-arrow:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.95) !important;
+}
+
+/* Thumbnails */
+.thumbnail-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.thumbnail-item:hover {
+    border-color: var(--purple-medium) !important;
+    transform: translateY(-2px) !important;
+}
+
+.thumbnail-item.active {
     border-color: var(--purple-dark) !important;
-    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(139, 95, 191, 0.3) !important;
 }
 
-.qty-btn:active {
-    transform: scale(0.95);
+/* Hide scrollbars for thumbnail container */
+#thumbnailGallery::-webkit-scrollbar {
+    display: none;
 }
 
-.back-to-products-btn {
-    transition: all 0.3s ease;
+#thumbnailGallery {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-image-container {
+        min-height: 400px !important;
+    }
+
+    .image-wrapper {
+        height: 400px !important;
+    }
+
+    .nav-arrow {
+        width: 45px !important;
+        height: 45px !important;
+    }
+
+    .thumbnail-item {
+        min-width: 80px !important;
+        height: 80px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-image-container {
+        min-height: 350px !important;
+        border-radius: 12px !important;
+    }
+
+    .image-wrapper {
+        height: 350px !important;
+    }
+}
+
+/* Focus states for accessibility */
+.nav-arrow:focus,
+.thumbnail-item:focus {
+    outline: 2px solid var(--purple-dark);
+    outline-offset: 2px;
+}
+
+/* Back to Products Button Hover Effect */
 .back-to-products-btn:hover {
-    background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%) !important;
+    background: var(--purple-dark) !important;
     color: white !important;
     border-color: var(--purple-dark) !important;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(139, 95, 191, 0.4);
-}
-
-.back-to-products-btn:active {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(139, 95, 191, 0.3);
+    transition: all 0.3s ease;
 }
 </style>
 
 <script>
+// Simple Product Image Gallery
+let currentImageIndex = 0;
+
+<?php
+// Pass image data to JavaScript
+echo "const productImages = " . json_encode(array_map(function($img) {
+    return ['path' => 'uploads/' . $img['image_path']];
+}, $displayImages)) . ";";
+?>
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSimpleGallery();
+    setupKeyboardNavigation();
+});
+
+function initializeSimpleGallery() {
+    updateNavigationButtons();
+    preloadImages();
+}
+
+function preloadImages() {
+    productImages.forEach((image, index) => {
+        const img = new Image();
+        img.src = image.path;
+    });
+}
+
+function changeMainImage(index, thumbnailElement = null) {
+    if (index < 0 || index >= productImages.length) return;
+
+    const mainImage = document.getElementById('mainProductImage');
+    const loadingIndicator = document.querySelector('.image-loading');
+
+    // Show loading
+    loadingIndicator.style.display = 'block';
+    mainImage.style.opacity = '0.3';
+
+    // Update current index
+    currentImageIndex = index;
+
+    // Load new image
+    const newImage = new Image();
+    newImage.onload = function() {
+        mainImage.src = productImages[index].path;
+        mainImage.style.opacity = '1';
+        loadingIndicator.style.display = 'none';
+    };
+    newImage.src = productImages[index].path;
+
+    // Update UI elements
+    updateActiveThumbnail(index);
+    updateImageCounter();
+    updateNavigationButtons();
+}
+
+function updateActiveThumbnail(activeIndex) {
+    // Update thumbnails
+    const thumbnails = document.querySelectorAll('.thumbnail-item');
+    thumbnails.forEach((thumb, index) => {
+        if (index === activeIndex) {
+            thumb.classList.add('active');
+            thumb.style.borderColor = 'var(--purple-dark)';
+        } else {
+            thumb.classList.remove('active');
+            thumb.style.borderColor = 'transparent';
+        }
+    });
+}
+
+function updateImageCounter() {
+    const counter = document.getElementById('currentImageIndex');
+    if (counter) {
+        counter.textContent = currentImageIndex + 1;
+    }
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.querySelector('.nav-prev');
+    const nextBtn = document.querySelector('.nav-next');
+
+    if (prevBtn && nextBtn) {
+        const isAtStart = currentImageIndex === 0;
+        const isAtEnd = currentImageIndex === productImages.length - 1;
+
+        prevBtn.style.opacity = isAtStart ? '0.4' : '1';
+        nextBtn.style.opacity = isAtEnd ? '0.4' : '1';
+        prevBtn.disabled = isAtStart;
+        nextBtn.disabled = isAtEnd;
+    }
+}
+
+function navigateImage(direction) {
+    const newIndex = currentImageIndex + direction;
+    if (newIndex >= 0 && newIndex < productImages.length) {
+        changeMainImage(newIndex);
+    }
+}
+
+function setupKeyboardNavigation() {
+    document.addEventListener('keydown', function(e) {
+        // Only work when not typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch(e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                navigateImage(-1);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                navigateImage(1);
+                break;
+        }
+    });
+}
+
 function increaseQty() {
     const input = document.getElementById('quantity');
     const max = parseInt(input.max);

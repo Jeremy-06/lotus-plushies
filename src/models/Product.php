@@ -329,6 +329,9 @@ class Product extends BaseModel {
             $product = $this->findById($productId);
             $imagePath = $product['img_path'] ?? null;
             
+            // Get all product images from product_images table
+            $productImages = $this->getProductImages($productId);
+            
             // NOTE: We don't delete order_items anymore to preserve order history
             // The foreign key will set product_id to NULL automatically
             // But let's make sure snapshot data is populated for any order_items that don't have it
@@ -338,6 +341,21 @@ class Product extends BaseModel {
                     WHERE product_id = ?";
             $stmt = mysqli_prepare($this->conn, $sql);
             mysqli_stmt_bind_param($stmt, 'ssi', $product['product_name'], $product['img_path'], $productId);
+            mysqli_stmt_execute($stmt);
+            
+            // Delete all product images from product_images table and their physical files
+            foreach ($productImages as $image) {
+                // Delete physical file
+                $fullImagePath = __DIR__ . '/../../public/uploads/' . $image['image_path'];
+                if (file_exists($fullImagePath)) {
+                    @unlink($fullImagePath);
+                }
+            }
+            
+            // Delete all records from product_images table
+            $sql = "DELETE FROM product_images WHERE product_id = ?";
+            $stmt = mysqli_prepare($this->conn, $sql);
+            mysqli_stmt_bind_param($stmt, 'i', $productId);
             mysqli_stmt_execute($stmt);
             
             // Then delete from inventory
@@ -352,7 +370,7 @@ class Product extends BaseModel {
             mysqli_stmt_bind_param($stmt, 'i', $productId);
             mysqli_stmt_execute($stmt);
             
-            // Delete the physical image file if it exists
+            // Delete the physical image file if it exists (legacy img_path)
             if (!empty($imagePath)) {
                 $fullImagePath = __DIR__ . '/../../public/uploads/' . $imagePath;
                 // Only attempt to delete if file exists, no error if it doesn't
@@ -369,5 +387,136 @@ class Product extends BaseModel {
             mysqli_rollback($this->conn);
             return false;
         }
+    }
+    
+    // ========== Product Images Methods ==========
+    
+    /**
+     * Get all images for a product
+     * @param int $productId
+     * @return array
+     */
+    public function getProductImages($productId) {
+        $sql = "SELECT * FROM product_images 
+                WHERE product_id = ? 
+                ORDER BY is_primary DESC, display_order ASC";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $productId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        return mysqli_fetch_all($result, MYSQLI_ASSOC);
+    }
+    
+    /**
+     * Add a new image for a product
+     * @param int $productId
+     * @param string $imagePath
+     * @param int $displayOrder
+     * @param bool $isPrimary
+     * @return int|bool Image ID on success, false on failure
+     */
+    public function addProductImage($productId, $imagePath, $displayOrder = 0, $isPrimary = false) {
+        // If setting as primary, unset other primary images
+        if ($isPrimary) {
+            $this->unsetPrimaryImage($productId);
+        }
+        
+        $sql = "INSERT INTO product_images (product_id, image_path, display_order, is_primary) 
+                VALUES (?, ?, ?, ?)";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        $isPrimaryInt = $isPrimary ? 1 : 0;
+        mysqli_stmt_bind_param($stmt, 'isii', $productId, $imagePath, $displayOrder, $isPrimaryInt);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            return mysqli_insert_id($this->conn);
+        }
+        return false;
+    }
+    
+    /**
+     * Delete a product image
+     * @param int $imageId
+     * @return bool
+     */
+    public function deleteProductImage($imageId) {
+        // Get image path before deletion
+        $sql = "SELECT image_path FROM product_images WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $imageId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $image = mysqli_fetch_assoc($result);
+        
+        if (!$image) {
+            return false;
+        }
+        
+        // Delete from database
+        $sql = "DELETE FROM product_images WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $imageId);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            // Delete physical file
+            $fullImagePath = __DIR__ . '/../../public/uploads/' . $image['image_path'];
+            if (file_exists($fullImagePath)) {
+                @unlink($fullImagePath);
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Set an image as primary
+     * @param int $imageId
+     * @return bool
+     */
+    public function setPrimaryImage($imageId) {
+        // Get product_id for this image
+        $sql = "SELECT product_id FROM product_images WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $imageId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $image = mysqli_fetch_assoc($result);
+        
+        if (!$image) {
+            return false;
+        }
+        
+        // Unset all primary images for this product
+        $this->unsetPrimaryImage($image['product_id']);
+        
+        // Set this image as primary
+        $sql = "UPDATE product_images SET is_primary = 1 WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $imageId);
+        return mysqli_stmt_execute($stmt);
+    }
+    
+    /**
+     * Unset primary image for a product
+     * @param int $productId
+     * @return bool
+     */
+    private function unsetPrimaryImage($productId) {
+        $sql = "UPDATE product_images SET is_primary = 0 WHERE product_id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $productId);
+        return mysqli_stmt_execute($stmt);
+    }
+    
+    /**
+     * Update display order for an image
+     * @param int $imageId
+     * @param int $displayOrder
+     * @return bool
+     */
+    public function updateImageOrder($imageId, $displayOrder) {
+        $sql = "UPDATE product_images SET display_order = ? WHERE id = ?";
+        $stmt = mysqli_prepare($this->conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'ii', $displayOrder, $imageId);
+        return mysqli_stmt_execute($stmt);
     }
 }

@@ -139,13 +139,13 @@ require_once __DIR__ . '/../../helpers/Session.php';
                            title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="admin.php?page=delete_product&id=<?php echo $product['id']; ?>" 
-                           class="btn btn-sm" 
+                        <button type="button"
+                           class="btn btn-sm delete-product-btn"
+                           data-product-id="<?php echo $product['id']; ?>"
                            style="background: #dc3545; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;"
-                           title="Delete"
-                           onclick="return confirm('Are you sure you want to delete this product?')">
+                           title="Delete">
                             <i class="fas fa-trash"></i>
-                        </a>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -158,6 +158,25 @@ require_once __DIR__ . '/../../helpers/Session.php';
     No products found. <a href="admin.php?page=create_product">Add your first product</a>
 </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete product button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-product-btn') || e.target.closest('.delete-product-btn')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('delete-product-btn') ? e.target : e.target.closest('.delete-product-btn');
+            const productId = button.getAttribute('data-product-id');
+            
+            showConfirmation(
+                '<i class="fas fa-trash text-danger me-2"></i>Delete Product',
+                'Are you sure you want to delete this product? This action cannot be undone.',
+                `admin.php?page=delete_product&id=${productId}`
+            );
+        }
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

@@ -64,13 +64,13 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
                            title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="admin.php?page=delete_category&id=<?php echo $cat['id']; ?>" 
-                           class="btn btn-sm" 
+                        <button type="button"
+                           class="btn btn-sm delete-category-btn"
+                           data-category-id="<?php echo $cat['id']; ?>"
                            style="background: #dc3545; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;"
-                           title="Delete"
-                           onclick="return confirm('Delete this category? This cannot be undone if it has associated products.');">
+                           title="Delete">
                             <i class="fas fa-trash"></i>
-                        </a>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -81,6 +81,25 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
 <?php else: ?>
 <div class="alert alert-info">No categories found.</div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete category button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-category-btn') || e.target.closest('.delete-category-btn')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('delete-category-btn') ? e.target : e.target.closest('.delete-category-btn');
+            const categoryId = button.getAttribute('data-category-id');
+            
+            showConfirmation(
+                '<i class="fas fa-trash text-danger me-2"></i>Delete Category',
+                'Delete this category? This cannot be undone if it has associated products.',
+                `admin.php?page=delete_category&id=${categoryId}`
+            );
+        }
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

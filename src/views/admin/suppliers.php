@@ -99,12 +99,13 @@ require_once __DIR__ . '/../../helpers/Session.php';
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <?php if ($supplier['product_count'] == 0): ?>
-                                    <a href="admin.php?page=delete_supplier&id=<?php echo $supplier['id']; ?>" 
-                                       class="btn btn-sm" 
+                                    <button type="button"
+                                       class="btn btn-sm delete-supplier-btn"
+                                       data-supplier-id="<?php echo $supplier['id']; ?>"
                                        style="background: #dc3545; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;"
-                                       onclick="return confirm('Are you sure you want to delete this supplier?');" title="Delete">
+                                       title="Delete">
                                         <i class="fas fa-trash"></i>
-                                    </a>
+                                    </button>
                                 <?php else: ?>
                                     <button class="btn btn-sm" 
                                             style="background: #6c757d; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;" 
@@ -120,6 +121,25 @@ require_once __DIR__ . '/../../helpers/Session.php';
         </table>
     </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete supplier button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-supplier-btn') || e.target.closest('.delete-supplier-btn')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('delete-supplier-btn') ? e.target : e.target.closest('.delete-supplier-btn');
+            const supplierId = button.getAttribute('data-supplier-id');
+            
+            showConfirmation(
+                '<i class="fas fa-trash text-danger me-2"></i>Delete Supplier',
+                'Are you sure you want to delete this supplier?',
+                `admin.php?page=delete_supplier&id=${supplierId}`
+            );
+        }
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

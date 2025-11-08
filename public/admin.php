@@ -125,6 +125,22 @@ switch ($page) {
         $controller->deleteSupplier();
         break;
         
+    case 'delete_product_image':
+        $controller->deleteProductImage();
+        break;
+        
+    case 'delete_images':
+        $controller->deleteProductImages();
+        break;
+        
+    case 'set_primary_image':
+        $controller->setPrimaryImage();
+        break;
+        
+    case 'upload_product_images':
+        $controller->uploadProductImages();
+        break;
+        
     case 'dashboard':
     default:
         $controller->dashboard();

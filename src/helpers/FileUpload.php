@@ -103,8 +103,9 @@ class FileUpload {
             }
             
             // Generate unique filename with prefix
-            $timestamp = time();
-            $filename = $config['prefix'] . $timestamp . '.' . $extension;
+            $timestamp = microtime(true) * 10000; // Use microtime for better uniqueness
+            $random = mt_rand(1000, 9999); // Add random component for extra uniqueness
+            $filename = $config['prefix'] . $timestamp . '_' . $random . '.' . $extension;
             
             // Ensure upload directory exists
             if (!is_dir($config['upload_dir'])) {

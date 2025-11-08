@@ -74,16 +74,39 @@ class AdminController {
                       ->required('selling_price', $_POST['selling_price'] ?? '');
 
             if ($validator->hasErrors()) {
+                // Store form data for repopulation
+                Session::set('form_data', $_POST);
                 Session::setFlash('message', 'Please fill in all required fields');
                 header('Location: admin.php?page=create_product');
                 exit();
             }
 
-            // Create product first to get the product ID
-            $imgPath = '';
+            // Handle image uploads
+            $uploadedImages = [];
+            
+            if (isset($_FILES['img_path']) && is_array($_FILES['img_path']['name']) && !empty($_FILES['img_path']['name'][0])) {
+                $files = $_FILES['img_path'];
+                $fileCount = count($files['name']);
+                
+                for ($i = 0; $i < $fileCount; $i++) {
+                    $file = [
+                        'name' => $files['name'][$i],
+                        'type' => $files['type'][$i],
+                        'tmp_name' => $files['tmp_name'][$i],
+                        'error' => $files['error'][$i],
+                        'size' => $files['size'][$i]
+                    ];
+                    
+                    if (!empty($file['name']) && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+                        $uploadedImages[] = $file; // Store file data for later upload
+                    }
+                }
+            }
+
             $supplierId = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
             
             try {
+                // Create product first without image
                 $created = $this->productModel->create(
                     intval($_POST['category_id']),
                     trim($_POST['product_name']),
@@ -91,19 +114,35 @@ class AdminController {
                     floatval($_POST['cost_price']),
                     floatval($_POST['selling_price']),
                     $supplierId,
-                    $imgPath
+                    '' // Empty image path initially
                 );
 
                 if (!$created) {
                     throw new Exception('Failed to create product in database');
                 }
                 
-                // Now handle image upload with the product ID
-                if (!empty($_FILES['img_path']['name'])) {
-                    $uploadResult = FileUpload::uploadProductImage($_FILES['img_path'], $created);
-                    if ($uploadResult['success']) {
-                        $imgPath = 'products/' . $uploadResult['filename'];
-                        // Update product with image path
+                // Now upload images with the actual product ID
+                $primaryImagePath = '';
+                if (!empty($uploadedImages)) {
+                    foreach ($uploadedImages as $index => $file) {
+                        $uploadResult = FileUpload::uploadProductImage($file, $created);
+                        if ($uploadResult['success']) {
+                            $imagePath = 'products/' . $uploadResult['filename'];
+                            $isPrimary = ($index === 0) ? true : false; // First image is primary
+                            $this->productModel->addProductImage($created, $imagePath, $index, $isPrimary);
+                            
+                            // Set primary image path
+                            if ($isPrimary) {
+                                $primaryImagePath = $imagePath;
+                            }
+                        } else {
+                            // If image upload fails, we still keep the product but log the error
+                            ErrorHandler::log('Image upload failed for product ' . $created . ': ' . $uploadResult['error'], 'WARNING');
+                        }
+                    }
+                    
+                    // Update product's primary image path
+                    if (!empty($primaryImagePath)) {
                         $this->productModel->update(
                             $created,
                             intval($_POST['category_id']),
@@ -112,14 +151,12 @@ class AdminController {
                             floatval($_POST['cost_price']),
                             floatval($_POST['selling_price']),
                             $supplierId,
-                            $imgPath
+                            $primaryImagePath,
+                            1 // is_active
                         );
-                    } else {
-                        // Log error but don't fail product creation
-                        ErrorHandler::log('Product image upload failed: ' . $uploadResult['error'], 'WARNING', ['product_id' => $created]);
                     }
                 }
-
+                
                 // Apply initial inventory if provided
                 if (isset($_POST['quantity']) && is_numeric($_POST['quantity'])) {
                     $quantity = intval($_POST['quantity']);
@@ -157,6 +194,8 @@ class AdminController {
                 header('Location: admin.php?page=products');
             } catch (Exception $e) {
                 ErrorHandler::log('Product creation failed: ' . $e->getMessage(), 'ERROR');
+                // Store form data for repopulation
+                Session::set('form_data', $_POST);
                 Session::setFlash('message', 'Failed to create product');
                 header('Location: admin.php?page=create_product');
             }
@@ -180,21 +219,9 @@ class AdminController {
                 exit();
             }
             
-            // Get current product data for old image
+            // Get current product data
             $currentProduct = $this->productModel->findById($id);
-            $imgPath = null;
-            
-            if (!empty($_FILES['img_path']['name'])) {
-                $oldImagePath = $currentProduct['img_path'] ?? null;
-                $uploadResult = FileUpload::uploadProductImage($_FILES['img_path'], $id, $oldImagePath);
-                if ($uploadResult['success']) {
-                    $imgPath = 'products/' . $uploadResult['filename'];
-                } else {
-                    Session::setFlash('message', $uploadResult['error']);
-                    header('Location: admin.php?page=edit_product&id=' . $id);
-                    exit();
-                }
-            }
+            $imgPath = $currentProduct['img_path']; // Keep existing image path
             
             try {
                 $isActive = isset($_POST['is_active']) ? intval($_POST['is_active']) : 1;
@@ -263,6 +290,7 @@ class AdminController {
         $categories = $this->categoryModel->getActive();
         $suppliers = $this->supplierModel->getAll();
         $inventory = $this->productModel->getInventory($id);
+        $productImages = $this->productModel->getProductImages($id);
         include __DIR__ . '/../views/admin/product_edit.php';
     }
 
@@ -1104,6 +1132,331 @@ class AdminController {
         }
         
         header('Location: admin.php?page=suppliers');
+        exit();
+    }
+    
+    // ========== Product Image Management ==========
+    
+    public function deleteProductImage() {
+        if (!isset($_GET['image_id']) || !isset($_GET['product_id'])) {
+            Session::setFlash('message', 'Invalid request - missing parameters');
+            header('Location: admin.php?page=products');
+            exit();
+        }
+        
+        $imageId = intval($_GET['image_id']);
+        $productId = intval($_GET['product_id']);
+        
+        // Check if this is the only image
+        $images = $this->productModel->getProductImages($productId);
+        if (count($images) <= 1) {
+            Session::setFlash('message', 'Cannot delete the only image. Please add another image first.');
+            header('Location: admin.php?page=edit_product&id=' . $productId);
+            exit();
+        }
+        
+        if ($this->productModel->deleteProductImage($imageId)) {
+            Session::setFlash('success', 'Image deleted successfully');
+        } else {
+            Session::setFlash('message', 'Failed to delete image. Please try again.');
+        }
+        
+        header('Location: admin.php?page=edit_product&id=' . $productId);
+        exit();
+    }
+    
+    public function setPrimaryImage() {
+        // Check if this is an AJAX request (POST) or regular request (GET)
+        $isAjax = $_SERVER['REQUEST_METHOD'] === 'POST';
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+
+            if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
+                echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+                exit();
+            }
+        }
+
+        $imageId = intval($_POST['image_id'] ?? $_GET['image_id'] ?? 0);
+        $productId = intval($_POST['product_id'] ?? $_GET['product_id'] ?? 0);
+
+        if (!$imageId || !$productId) {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'error' => 'Invalid request parameters']);
+                exit();
+            } else {
+                Session::setFlash('message', 'Invalid request');
+                header('Location: admin.php?page=products');
+                exit();
+            }
+        }
+
+        // Check if product exists
+        $product = $this->productModel->findById($productId);
+        if (!$product) {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'error' => 'Product not found']);
+                exit();
+            } else {
+                Session::setFlash('message', 'Product not found');
+                header('Location: admin.php?page=products');
+                exit();
+            }
+        }
+
+        if ($this->productModel->setPrimaryImage($imageId)) {
+            // Also update the legacy img_path field
+            $images = $this->productModel->getProductImages($productId);
+            foreach ($images as $img) {
+                if ($img['id'] == $imageId) {
+                    $this->productModel->update(
+                        $productId,
+                        $product['category_id'],
+                        $product['product_name'],
+                        $product['description'],
+                        $product['cost_price'],
+                        $product['selling_price'],
+                        $product['supplier_id'],
+                        $img['image_path'],
+                        $product['is_active']
+                    );
+                    break;
+                }
+            }
+
+            if ($isAjax) {
+                echo json_encode(['success' => true, 'message' => 'Primary image updated successfully']);
+            } else {
+                Session::setFlash('success', 'Primary image updated successfully');
+                header('Location: admin.php?page=edit_product&id=' . $productId);
+            }
+        } else {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'error' => 'Failed to set primary image']);
+            } else {
+                Session::setFlash('message', 'Failed to set primary image');
+                header('Location: admin.php?page=edit_product&id=' . $productId);
+            }
+        }
+
+        if (!$isAjax) {
+            exit();
+        }
+    }
+    
+    /**
+     * Handle AJAX image upload for products
+     */
+    public function uploadProductImages() {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+            exit();
+        }
+        
+        if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
+            echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+            exit();
+        }
+        
+        $productId = intval($_POST['product_id'] ?? 0);
+        if (!$productId) {
+            echo json_encode(['success' => false, 'error' => 'Invalid product ID']);
+            exit();
+        }
+        
+        // Check if product exists
+        $product = $this->productModel->findById($productId);
+        if (!$product) {
+            echo json_encode(['success' => false, 'error' => 'Product not found']);
+            exit();
+        }
+        
+        $uploadedCount = 0;
+        $errors = [];
+        
+        if (isset($_FILES['product_images']) && is_array($_FILES['product_images']['name']) && !empty($_FILES['product_images']['name'][0])) {
+            $files = $_FILES['product_images'];
+            $fileCount = count($files['name']);
+            $existingImages = $this->productModel->getProductImages($productId);
+            $nextOrder = count($existingImages);
+            $uploadedPaths = []; // Track uploaded image paths to prevent duplicates
+            
+            for ($i = 0; $i < $fileCount; $i++) {
+                $file = [
+                    'name' => $files['name'][$i],
+                    'type' => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error' => $files['error'][$i],
+                    'size' => $files['size'][$i]
+                ];
+                
+                if (!empty($file['name']) && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $uploadResult = FileUpload::uploadProductImage($file, $productId);
+                    if ($uploadResult['success']) {
+                        $imagePath = 'products/' . $uploadResult['filename'];
+                        
+                        // Check if this image path was already uploaded in this session
+                        if (!in_array($imagePath, $uploadedPaths)) {
+                            $uploadedPaths[] = $imagePath;
+                            
+                            // Set as primary if no existing images and this is the first upload
+                            $isPrimary = (count($existingImages) === 0 && count($uploadedPaths) === 1);
+                            $this->productModel->addProductImage($productId, $imagePath, $nextOrder + count($uploadedPaths) - 1, $isPrimary);
+                            
+                            // Update legacy img_path if this is the first image
+                            if ($isPrimary) {
+                                $this->productModel->update(
+                                    $productId,
+                                    $product['category_id'],
+                                    $product['product_name'],
+                                    $product['description'],
+                                    $product['cost_price'],
+                                    $product['selling_price'],
+                                    $product['supplier_id'],
+                                    $imagePath,
+                                    $product['is_active']
+                                );
+                            }
+                            
+                            $uploadedCount++;
+                        }
+                    } else {
+                        $errors[] = "Failed to upload {$file['name']}: " . $uploadResult['error'];
+                    }
+                }
+            }
+        }
+        
+        if ($uploadedCount > 0) {
+            echo json_encode([
+                'success' => true, 
+                'message' => "Successfully uploaded {$uploadedCount} image(s)",
+                'uploaded_count' => $uploadedCount,
+                'errors' => $errors
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false, 
+                'error' => 'No images were uploaded successfully',
+                'errors' => $errors
+            ]);
+        }
+        exit();
+    }
+
+    public function deleteProductImages() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+            exit();
+        }
+
+        if (!isset($_POST['csrf_token']) || !CSRF::validateToken($_POST['csrf_token'])) {
+            echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+            exit();
+        }
+
+        $productId = intval($_POST['product_id'] ?? 0);
+        if (!$productId) {
+            echo json_encode(['success' => false, 'error' => 'Invalid product ID']);
+            exit();
+        }
+
+        $imageIds = json_decode($_POST['image_ids'] ?? '[]', true);
+        if (!is_array($imageIds) || empty($imageIds)) {
+            echo json_encode(['success' => false, 'error' => 'No images selected for deletion']);
+            exit();
+        }
+
+        // Check if product exists
+        $product = $this->productModel->findById($productId);
+        if (!$product) {
+            echo json_encode(['success' => false, 'error' => 'Product not found']);
+            exit();
+        }
+
+        // Get current images to check constraints
+        $currentImages = $this->productModel->getProductImages($productId);
+        $primaryImage = null;
+        foreach ($currentImages as $img) {
+            if ($img['is_primary']) {
+                $primaryImage = $img;
+                break;
+            }
+        }
+
+        // Check if trying to delete the primary image
+        $deletingPrimary = false;
+        foreach ($imageIds as $imageId) {
+            if ($primaryImage && $primaryImage['id'] == $imageId) {
+                $deletingPrimary = true;
+                break;
+            }
+        }
+
+        // If deleting primary and there are other images, we need to set another as primary
+        if ($deletingPrimary && count($currentImages) > count($imageIds)) {
+            // Find the first non-primary image to set as primary
+            $newPrimaryImage = null;
+            foreach ($currentImages as $img) {
+                if ($img['is_primary'] == 0 && !in_array($img['id'], $imageIds)) {
+                    $newPrimaryImage = $img;
+                    break;
+                }
+            }
+
+            if ($newPrimaryImage) {
+                $this->productModel->setPrimaryImage($newPrimaryImage['id']);
+                // Update legacy img_path
+                $this->productModel->update(
+                    $productId,
+                    $product['category_id'],
+                    $product['product_name'],
+                    $product['description'],
+                    $product['cost_price'],
+                    $product['selling_price'],
+                    $product['supplier_id'],
+                    $newPrimaryImage['image_path'],
+                    $product['is_active']
+                );
+            }
+        }
+
+        // Check if we're deleting all images
+        if (count($currentImages) <= count($imageIds)) {
+            echo json_encode(['success' => false, 'error' => 'Cannot delete all images. At least one image must remain.']);
+            exit();
+        }
+
+        $deletedCount = 0;
+        $errors = [];
+
+        foreach ($imageIds as $imageId) {
+            if ($this->productModel->deleteProductImage($imageId)) {
+                $deletedCount++;
+            } else {
+                $errors[] = "Failed to delete image ID: {$imageId}";
+            }
+        }
+
+        if ($deletedCount > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => "Successfully deleted {$deletedCount} image(s)",
+                'deleted_count' => $deletedCount,
+                'errors' => $errors
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No images were deleted successfully',
+                'errors' => $errors
+            ]);
+        }
         exit();
     }
 

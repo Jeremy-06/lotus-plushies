@@ -155,13 +155,13 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
                            title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="admin.php?page=delete_user&id=<?php echo $u['id']; ?>" 
-                           class="btn btn-sm" 
+                        <button type="button"
+                           class="btn btn-sm delete-user-btn"
+                           data-user-id="<?php echo $u['id']; ?>"
                            style="background: #dc3545; color: white; border: none; border-radius: 0 20px 20px 0; padding: 8px 16px;"
-                           title="Delete"
-                           onclick="return confirm('Delete this user? This cannot be undone.');">
+                           title="Delete">
                             <i class="fas fa-trash"></i>
-                        </a>
+                        </button>
                     </div>
                     <?php else: ?>
                     <div class="d-flex align-items-center gap-2">
@@ -182,6 +182,25 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
     <i class="fas fa-info-circle me-2"></i>No users found.
 </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete user button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-user-btn') || e.target.closest('.delete-user-btn')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('delete-user-btn') ? e.target : e.target.closest('.delete-user-btn');
+            const userId = button.getAttribute('data-user-id');
+            
+            showConfirmation(
+                '<i class="fas fa-trash text-danger me-2"></i>Delete User',
+                'Delete this user? This cannot be undone.',
+                `admin.php?page=delete_user&id=${userId}`
+            );
+        }
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

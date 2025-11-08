@@ -59,6 +59,7 @@ class ProductController {
         }
         
         $inventory = $this->productModel->getInventory($productId);
+        $productImages = $this->productModel->getProductImages($productId);
         
         include __DIR__ . '/../views/product_detail.php';
     }

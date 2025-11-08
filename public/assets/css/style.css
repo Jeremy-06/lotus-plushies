@@ -1447,3 +1447,303 @@ html {
 .rounded-circle[src]:hover {
   box-shadow: 0 4px 16px rgba(139, 95, 191, 0.4) !important;
 }
+
+/* ===========================================
+   IMAGE MANAGEMENT STYLES
+   =========================================== */
+
+/* Image gallery container */
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+/* Individual image item */
+.image-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(139, 95, 191, 0.2);
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.image-item:hover {
+  box-shadow: 0 4px 16px rgba(139, 95, 191, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Primary image indicator */
+.primary-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #8b5fb7, #d946ef);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Image overlay for actions */
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(139, 95, 191, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+}
+
+.image-item:hover .image-overlay {
+  opacity: 1;
+}
+
+/* Action buttons in overlay */
+.image-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.image-actions .btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.image-actions .btn:hover {
+  transform: scale(1.05);
+}
+
+/* Image display */
+.image-item img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Upload area styling */
+.upload-area {
+  border: 2px dashed #8b5fb7;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 95, 191, 0.05),
+    rgba(217, 70, 239, 0.05)
+  );
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.upload-area:hover {
+  border-color: #d946ef;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 95, 191, 0.1),
+    rgba(217, 70, 239, 0.1)
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 95, 191, 0.25);
+}
+
+.upload-area.dragover {
+  border-color: #d946ef;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 95, 191, 0.15),
+    rgba(217, 70, 239, 0.15)
+  );
+  box-shadow: 0 6px 20px rgba(139, 95, 191, 0.4);
+}
+
+/* File input styling */
+.upload-area input[type="file"] {
+  display: none;
+}
+
+.upload-area .upload-icon {
+  font-size: 2rem;
+  color: #8b5fb7;
+  margin-bottom: 10px;
+}
+
+.upload-area .upload-text {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.upload-area:hover .upload-icon,
+.upload-area:hover .upload-text {
+  color: #d946ef;
+}
+
+/* Image management section */
+.image-management {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid rgba(139, 95, 191, 0.1);
+}
+
+.image-management h4 {
+  color: #8b5fb7;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.image-management .section-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 95, 191, 0.3),
+    transparent
+  );
+  margin: 20px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .image-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .image-item img {
+    height: 100px;
+  }
+
+  .upload-area {
+    padding: 15px;
+  }
+}
+
+/* ===========================================
+   IMAGE PREVIEW STYLES
+   =========================================== */
+
+/* Image preview section */
+.image-preview {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  border: 2px solid rgba(139, 95, 191, 0.2);
+  margin-top: 15px;
+}
+
+.preview-title {
+  color: var(--purple-dark);
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.preview-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: rgba(139, 95, 191, 0.05);
+  border-radius: 8px;
+}
+
+/* Individual preview item */
+.preview-item {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(139, 95, 191, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(139, 95, 191, 0.1);
+}
+
+.preview-item:hover {
+  box-shadow: 0 4px 12px rgba(139, 95, 191, 0.25);
+  transform: translateY(-1px);
+}
+
+.preview-image {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.preview-info {
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.preview-info small {
+  display: block;
+  line-height: 1.2;
+}
+
+.remove-preview {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #dc3545;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.remove-preview:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.preview-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(139, 95, 191, 0.2);
+}
+
+/* Responsive preview */
+@media (max-width: 768px) {
+  .preview-container {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .preview-image {
+    height: 70px;
+  }
+
+  .preview-item {
+    padding: 6px;
+  }
+}

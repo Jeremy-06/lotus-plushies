@@ -10,6 +10,44 @@ require_once __DIR__ . '/../helpers/Session.php';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="assets/css/style.css?v=<?php echo time(); ?>" rel="stylesheet" type="text/css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+    <style>
+    /* Custom Confirmation Modal Styles */
+    .confirmation-modal {
+        animation: fadeIn 0.3s ease;
+    }
+
+    .confirmation-modal .modal-content {
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-20px) scale(0.95); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .confirmation-modal .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* CSS Variables for consistency */
+    :root {
+        --purple-dark: #8b5fbf;
+        --purple-medium: #a78bfa;
+        --purple-light: #c4b5fd;
+        --pink-medium: #f472b6;
+        --pink-light: #fbb6ce;
+        --text-primary: #374151;
+        --text-secondary: #6b7280;
+    }
+    </style>
+
     <title><?php echo $pageTitle ?? 'Admin - Lotus Plushies'; ?></title>
 </head>
 <body class="admin-panel page-wrapper">
@@ -126,6 +164,30 @@ require_once __DIR__ . '/../helpers/Session.php';
     </div>
 </div>
 
+<!-- Custom Confirmation Modal -->
+<div id="confirmationModal" class="confirmation-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: white; border-radius: 15px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative;">
+        <div class="modal-header" style="border-bottom: 1px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h5 class="modal-title" id="confirmationTitle" style="margin: 0; color: var(--purple-dark); font-weight: 600;">
+                <i class="fas fa-question-circle me-2"></i>Confirm Action
+            </h5>
+        </div>
+        <div class="modal-body">
+            <p id="confirmationMessage" style="margin: 0; color: #6c757d; font-size: 1rem; line-height: 1.5;">
+                Are you sure you want to perform this action?
+            </p>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding-top: 1rem; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" id="cancelBtn" style="border-radius: 25px; padding: 0.5rem 1.5rem;">
+                <i class="fas fa-times me-1"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="confirmBtn" style="border-radius: 25px; padding: 0.5rem 1.5rem; background: var(--purple-dark); border: none;">
+                <i class="fas fa-check me-1"></i> Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
 <footer class="site-footer admin-footer py-3 text-white">
     <div class="container text-center">
         <div class="mb-2">
@@ -141,5 +203,66 @@ require_once __DIR__ . '/../helpers/Session.php';
 </footer>
 
 <script src="assets/js/main.js"></script>
+
+<!-- Custom Confirmation Modal JavaScript -->
+<script>
+// Global confirmation modal variables
+let currentActionUrl = null;
+
+// Show confirmation modal
+function showConfirmation(title, message, actionUrl) {
+    const modal = document.getElementById('confirmationModal');
+    const titleEl = document.getElementById('confirmationTitle');
+    const messageEl = document.getElementById('confirmationMessage');
+
+    titleEl.innerHTML = title;
+    messageEl.textContent = message;
+    currentActionUrl = actionUrl;
+
+    modal.style.display = 'flex';
+
+    // Focus on cancel button for accessibility
+    setTimeout(() => {
+        document.getElementById('cancelBtn').focus();
+    }, 100);
+}
+
+// Modal event handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('confirmationModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    // Cancel button
+    cancelBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        currentActionUrl = null;
+    });
+
+    // Confirm button
+    confirmBtn.addEventListener('click', function() {
+        if (currentActionUrl) {
+            window.location.href = currentActionUrl;
+        }
+    });
+
+    // Close modal on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            currentActionUrl = null;
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            modal.style.display = 'none';
+            currentActionUrl = null;
+        }
+    });
+});
+</script>
+
 </body>
 </html>
