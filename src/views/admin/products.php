@@ -104,9 +104,17 @@ require_once __DIR__ . '/../../helpers/Session.php';
                     <?php if ($product['img_path']): ?>
                         <img src="uploads/<?php echo htmlspecialchars($product['img_path']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                     <?php else: ?>
-                        <div class="d-flex align-items-center justify-content-center position-relative" style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.15) 0%, rgba(255, 159, 191, 0.2) 100%); overflow: hidden;">
-                            <div class="position-absolute" style="top: -30%; right: -20%; width: 30px; height: 30px; background: rgba(139, 95, 191, 0.2); border-radius: 50%; filter: blur(10px);"></div>
-                            <i class="fas fa-box-open" style="font-size: 1.5rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                        <div class="d-flex align-items-center justify-content-center position-relative" style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.1) 0%, rgba(255, 159, 191, 0.15) 100%); overflow: hidden;">
+                            <!-- Decorative background circles -->
+                            <div class="position-absolute" style="top: -20%; right: -10%; width: 30px; height: 30px; background: rgba(139, 95, 191, 0.1); border-radius: 50%; filter: blur(10px);"></div>
+                            <div class="position-absolute" style="bottom: -20%; left: -10%; width: 25px; height: 25px; background: rgba(255, 159, 191, 0.15); border-radius: 50%; filter: blur(8px);"></div>
+                            
+                            <div class="position-relative text-center">
+                                <div class="mb-1" style="animation: float 3s ease-in-out infinite;">
+                                    <i class="fas fa-box-open" style="font-size: 1.2rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                                </div>
+                                <p class="mb-0 fw-bold" style="color: var(--purple-medium); font-size: 0.6rem; letter-spacing: 0.5px;">No Image</p>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </td>
@@ -158,6 +166,18 @@ require_once __DIR__ . '/../../helpers/Session.php';
     No products found. <a href="admin.php?page=create_product">Add your first product</a>
 </div>
 <?php endif; ?>
+
+<style>
+/* Floating animation for no-image placeholder */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

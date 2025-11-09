@@ -32,11 +32,16 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                             <?php if ($item['img_path']): ?>
                                 <img src="uploads/<?php echo htmlspecialchars($item['img_path']); ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="img-fluid rounded" style="max-height: 100px; object-fit: contain;">
                             <?php else: ?>
-                                <div class="d-flex align-items-center justify-content-center rounded position-relative" style="height: 100px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.15) 0%, rgba(255, 159, 191, 0.2) 100%); overflow: hidden;">
-                                    <div class="position-absolute" style="top: -30%; right: -20%; width: 60px; height: 60px; background: rgba(139, 95, 191, 0.2); border-radius: 50%; filter: blur(20px);"></div>
-                                    <div class="position-absolute" style="bottom: -30%; left: -20%; width: 50px; height: 50px; background: rgba(255, 159, 191, 0.25); border-radius: 50%; filter: blur(18px);"></div>
+                                <div class="d-flex align-items-center justify-content-center rounded position-relative" style="height: 100px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.1) 0%, rgba(255, 159, 191, 0.15) 100%); overflow: hidden;">
+                                    <!-- Decorative background circles -->
+                                    <div class="position-absolute" style="top: -20%; right: -10%; width: 60px; height: 60px; background: rgba(139, 95, 191, 0.1); border-radius: 50%; filter: blur(20px);"></div>
+                                    <div class="position-absolute" style="bottom: -20%; left: -10%; width: 50px; height: 50px; background: rgba(255, 159, 191, 0.15); border-radius: 50%; filter: blur(18px);"></div>
+                                    
                                     <div class="position-relative text-center">
-                                        <i class="fas fa-box-open" style="font-size: 2.5rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: float 3s ease-in-out infinite;"></i>
+                                        <div class="mb-1" style="animation: float 3s ease-in-out infinite;">
+                                            <i class="fas fa-box-open" style="font-size: 2rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                                        </div>
+                                        <p class="mb-0 fw-bold" style="color: var(--purple-medium); font-size: 0.7rem; letter-spacing: 0.5px;">No Image</p>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -139,7 +144,8 @@ require_once __DIR__ . '/../helpers/CSRF.php';
     transition: all 0.3s ease;
 }
 
-.qty-btn-cart:hover {
+.qty-btn-cart:hover,
+.qty-btn-cart:active {
     background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%) !important;
     color: white !important;
     border-color: var(--purple-dark) !important;
@@ -154,6 +160,16 @@ require_once __DIR__ . '/../helpers/CSRF.php';
 .cart-price {
     white-space: nowrap;
     font-size: 1.2rem !important;
+}
+
+/* Floating animation for no-image placeholder */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
 }
 </style>
 

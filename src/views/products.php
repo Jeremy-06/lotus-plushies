@@ -25,7 +25,7 @@ require_once __DIR__ . '/../helpers/Session.php';
 <?php if (!empty($categories)): ?>
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="dropdown">
+        <div class="dropdown products-dropdown">
             <button class="btn btn-outline-primary dropdown-toggle" 
                     type="button" 
                     id="categoryDropdown" 
@@ -48,7 +48,7 @@ require_once __DIR__ . '/../helpers/Session.php';
                 }
                 ?>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="categoryDropdown" style="max-height: 400px; overflow-y: auto;">
+            <ul class="dropdown-menu products-dropdown-menu" aria-labelledby="categoryDropdown" style="max-height: 400px; overflow-y: auto;">
                 <li>
                     <a class="dropdown-item <?php echo !isset($_GET['category']) ? 'active' : ''; ?>" 
                        href="index.php?page=products">

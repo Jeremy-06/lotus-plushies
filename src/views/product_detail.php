@@ -18,7 +18,7 @@ require_once __DIR__ . '/../helpers/CSRF.php';
 <div class="row g-4">
     <!-- Product Image Section -->
     <div class="col-lg-6">
-        <div class="card shadow-sm" style="border: none; border-radius: 20px; overflow: hidden; position: sticky; top: 20px;">
+        <div class="card shadow-sm" style="border: none; border-radius: 20px; overflow: hidden;">
             <div class="card-body p-0">
                 <?php 
                 // Determine which images to display
@@ -88,18 +88,16 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <div class="no-image-showcase" style="height: 550px; border-radius: 25px; background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); display: flex; align-items-center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);">
-                        <!-- Enhanced Decorative Elements -->
-                        <div class="no-image-bg-1" style="position: absolute; top: -30%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(139, 95, 191, 0.1) 0%, transparent 70%); border-radius: 50%; animation: float-slow 6s ease-in-out infinite;"></div>
-                        <div class="no-image-bg-2" style="position: absolute; bottom: -30%; left: -20%; width: 250px; height: 250px; background: radial-gradient(circle, rgba(255, 159, 191, 0.1) 0%, transparent 70%); border-radius: 50%; animation: float-slow 8s ease-in-out infinite reverse;"></div>
-                        <div class="no-image-bg-3" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%); border-radius: 50%; animation: pulse-glow 4s ease-in-out infinite;"></div>
-
-                        <div class="no-image-content" style="position: relative; text-align: center; z-index: 2;">
-                            <div class="no-image-icon" style="margin-bottom: 2rem; animation: bounce-in 1s ease-out;">
-                                <i class="fas fa-images" style="font-size: 5rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 10px 30px rgba(139, 95, 191, 0.3));"></i>
+                    <div class="no-image-showcase" style="height: 550px; border-radius: 25px; background: linear-gradient(135deg, rgba(139, 95, 191, 0.1) 0%, rgba(255, 159, 191, 0.15) 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                        <!-- Decorative background circles -->
+                        <div class="position-absolute" style="top: -20%; right: -10%; width: 300px; height: 300px; background: rgba(139, 95, 191, 0.1); border-radius: 50%; filter: blur(30px);"></div>
+                        <div class="position-absolute" style="bottom: -20%; left: -10%; width: 250px; height: 250px; background: rgba(255, 159, 191, 0.15); border-radius: 50%; filter: blur(25px);"></div>
+                        
+                        <div class="text-center">
+                            <div class="mb-3" style="animation: float 3s ease-in-out infinite;">
+                                <i class="fas fa-box-open" style="font-size: 6rem; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
                             </div>
-                            <h3 class="no-image-title" style="color: var(--purple-medium); font-weight: 700; font-size: 2rem; margin-bottom: 1rem; letter-spacing: 1px;">No Images Available</h3>
-                            <p class="no-image-subtitle" style="color: var(--text-secondary); font-size: 1.1rem; max-width: 300px; margin: 0 auto; line-height: 1.6;">Beautiful product images will be displayed here once uploaded</p>
+                            <p class="mb-0 fw-bold" style="color: var(--purple-medium); font-size: 1.2rem; letter-spacing: 0.5px;">No Image</p>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -160,8 +158,8 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                     
                     <div class="col-md-6">
                         <div class="d-flex align-items-center p-3" style="background: linear-gradient(135deg, rgba(255, 159, 191, 0.15) 0%, rgba(255, 159, 191, 0.08) 100%); border-radius: 15px;">
-                            <div class="me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--pink-medium) 0%, var(--pink-light) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-truck" style="color: white; font-size: 1.3rem;"></i>
+                            <div class="me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 159, 191, 0.3); box-shadow: 0 4px 12px rgba(255, 159, 191, 0.2);">
+                                <i class="fas fa-truck" style="color: var(--pink-medium); font-size: 1.3rem;"></i>
                             </div>
                             <div>
                                 <small style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Supplier</small>
@@ -339,6 +337,30 @@ require_once __DIR__ . '/../helpers/CSRF.php';
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(139, 95, 191, 0.3);
     transition: all 0.3s ease;
+}
+
+/* Quantity button hover effects */
+.qty-btn:hover,
+.qty-btn:active {
+    background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%) !important;
+    color: white !important;
+    border-color: var(--purple-dark) !important;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+/* Floating animation for no-image placeholder */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
 }
 </style>
 

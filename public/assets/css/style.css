@@ -1168,16 +1168,23 @@ a:hover {
 }
 
 /* Dropdown */
+.dropdown {
+  position: relative !important;
+  z-index: 9999;
+  overflow: visible !important;
+}
+
 .dropdown-menu {
   border-radius: 15px;
   border: 2px solid var(--purple-medium);
   box-shadow: 0 4px 12px rgba(139, 95, 191, 0.25) !important;
   padding: 0.5rem;
   transition: all 0.3s ease;
-  z-index: 999999 !important;
+  z-index: 1000000 !important;
   position: absolute !important;
   will-change: transform;
   transform: translate3d(0, 0, 0);
+  overflow: visible !important;
 }
 
 .dropdown-menu.show {
@@ -1208,6 +1215,14 @@ a:hover {
   z-index: 999999;
 }
 
+/* Ensure dropdown containers don't clip the menu */
+.row.mb-4 .col-md-12,
+.dropdown {
+  position: relative !important;
+  z-index: 9999;
+  overflow: visible !important;
+}
+
 .navbar .dropdown-menu {
   z-index: 999999 !important;
   position: absolute !important;
@@ -1219,18 +1234,76 @@ a:hover {
   position: absolute !important;
 }
 
-/* Ensure all content below navbar has lower z-index */
-.main-content,
-.main-content * {
+/* NOTE: removed broad stacking-context rules that forced every element under
+   .main-content to be positioned and given z-index. Those created stacking
+   contexts that caused dropdowns (popper-managed) to render behind cards.
+   Keep only targeted positioning on elements that actually need it. */
+
+/* If you need to limit stacking for specific elements, add explicit rules
+   targeting those elements, e.g. `.some-panel { position: relative; z-index: 1; }`. */
+
+/* Cards should not have z-index to allow dropdowns to appear above them */
+.card {
   position: relative;
-  z-index: 1;
+  /* z-index: 1; removed to allow dropdowns to appear above */
 }
 
-.card,
-.container,
-body > * {
-  position: relative;
-  z-index: 1;
+/* Override z-index for dropdowns to appear above cards */
+.dropdown,
+.dropdown * {
+  z-index: 1000000 !important;
+  position: relative !important;
+}
+
+/* Specific rules for products page dropdown */
+.products-dropdown,
+.products-dropdown * {
+  z-index: 9999999 !important;
+  position: relative !important;
+}
+
+.products-dropdown-menu {
+  z-index: 9999999 !important;
+  position: absolute !important;
+  /* make dropdown list scrollable when long */
+  max-height: 360px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  padding-right: 8px; /* avoid content hiding behind scrollbar */
+}
+
+/* Remove z-index from cards on products page to allow dropdown to appear above */
+.page-products .card {
+  z-index: auto !important;
+}
+
+/* Force category dropdown menu on products page to top */
+[aria-labelledby="categoryDropdown"] {
+  z-index: 2147483647 !important;
+  position: absolute !important;
+  background: #fff;
+}
+
+/* Force products page category dropdown to always be on top */
+.products-page .products-dropdown,
+.products-page .products-dropdown-menu,
+.products-page [aria-labelledby="categoryDropdown"] {
+  z-index: 2147483647 !important;
+  position: absolute !important;
+  background: #fff;
+  overflow: visible !important;
+}
+
+.products-page .products-dropdown {
+  position: relative !important;
+}
+
+.products-page .products-dropdown-menu {
+  left: 0 !important;
+  right: auto !important;
+  top: 100% !important;
+  min-width: 200px;
 }
 
 /* ============================================
