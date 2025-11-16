@@ -119,7 +119,7 @@ require_once __DIR__ . '/../../helpers/Session.php';
                     <?php endif; ?>
                 </td>
                 <td><?php echo htmlspecialchars($product['product_name']); ?></td>
-                <td><?php echo htmlspecialchars($product['category_name']); ?></td>
+                <td><?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized'); ?></td>
                 <td><?php echo $product['supplier_name'] ? htmlspecialchars($product['supplier_name']) : '<span class="text-muted">N/A</span>'; ?></td>
                 <td>₱<?php echo number_format($product['cost_price'], 2); ?></td>
                 <td>₱<?php echo number_format($product['selling_price'], 2); ?></td>

@@ -19,16 +19,24 @@ Session::remove('form_data');
                     <?php echo CSRF::getTokenField(); ?>
                     
                     <div class="form-group mb-3">
-                        <label for="category_id">Category</label>
-                        <select class="form-control" id="category_id" name="category_id" required>
-                            <option value="">Select Category</option>
+                        <label>Categories</label>
+                        <div class="row">
                             <?php foreach ($categories as $category): ?>
-                                <option value="<?php echo $category['id']; ?>" 
-                                    <?php echo (isset($formData['category_id']) && $formData['category_id'] == $category['id']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($category['category_name']); ?>
-                                </option>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               id="category_<?php echo $category['id']; ?>" 
+                                               name="categories[]" 
+                                               value="<?php echo $category['id']; ?>"
+                                               <?php echo (isset($formData['categories']) && in_array($category['id'], (array)$formData['categories'])) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="category_<?php echo $category['id']; ?>">
+                                            <?php echo htmlspecialchars($category['category_name']); ?>
+                                        </label>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+                        <small class="form-text text-muted">Select one or more categories for this product.</small>
                     </div>
                     
                     <div class="form-group mb-3">

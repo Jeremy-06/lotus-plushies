@@ -58,8 +58,8 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                         </div>
                         <div class="col-md-2">
                             <p class="mb-1 text-muted small">Quantity</p>
-                            <div class="input-group input-group-sm" style="flex-wrap: nowrap; max-width: 120px;">
-                                <button type="button" class="btn btn-sm qty-btn-cart" onclick="decreaseCartQty(<?php echo $item['product_id']; ?>)" style="border: 1px solid var(--purple-medium); color: var(--purple-dark); border-radius: 8px 0 0 8px; padding: 0.25rem 0.5rem; background: white;">
+                            <div class="input-group input-group-sm" style="flex-wrap: nowrap; max-width: 120px; border-radius: 8px; overflow: hidden;">
+                                <button type="button" class="btn btn-sm qty-btn-cart" onclick="decreaseCartQty(<?php echo $item['product_id']; ?>)" style="border: 1px solid var(--purple-medium); padding: 0.25rem 0.5rem;">
                                     <i class="fas fa-minus" style="font-size: 0.75rem;"></i>
                                 </button>
                                 <input type="number" name="product_qty[<?php echo $item['product_id']; ?>]" 
@@ -68,7 +68,7 @@ require_once __DIR__ . '/../helpers/CSRF.php';
                                        min="1" max="<?php echo $item['quantity_on_hand']; ?>" 
                                        class="form-control form-control-sm text-center fw-bold" 
                                        style="border: 1px solid var(--purple-medium); border-left: none; border-right: none; -moz-appearance: textfield; padding: 0.25rem;">
-                                <button type="button" class="btn btn-sm qty-btn-cart" onclick="increaseCartQty(<?php echo $item['product_id']; ?>, <?php echo $item['quantity_on_hand']; ?>)" style="border: 1px solid var(--purple-medium); color: var(--purple-dark); border-radius: 0 8px 8px 0; padding: 0.25rem 0.5rem; background: white;">
+                                <button type="button" class="btn btn-sm qty-btn-cart" onclick="increaseCartQty(<?php echo $item['product_id']; ?>, <?php echo $item['quantity_on_hand']; ?>)" style="border: 1px solid var(--purple-medium); padding: 0.25rem 0.5rem;">
                                     <i class="fas fa-plus" style="font-size: 0.75rem;"></i>
                                 </button>
                             </div>
@@ -142,14 +142,17 @@ require_once __DIR__ . '/../helpers/CSRF.php';
 <style>
 .qty-btn-cart {
     transition: all 0.3s ease;
+    background: var(--purple-medium) !important;
+    color: white !important;
+    border-color: var(--purple-medium) !important;
+    border-radius: 0 !important;
 }
 
 .qty-btn-cart:hover,
 .qty-btn-cart:active {
-    background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%) !important;
+    background: var(--purple-dark) !important;
     color: white !important;
     border-color: var(--purple-dark) !important;
-    transform: scale(1.05);
 }
 
 .qty-btn-cart:active {

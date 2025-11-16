@@ -44,16 +44,24 @@ require_once __DIR__ . '/../../helpers/CSRF.php';
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
-                                        <label for="category_id"><i class="fas fa-tag"></i> Category *</label>
-                                        <select class="form-control" id="category_id" name="category_id" required>
-                                            <option value="">Select Category</option>
+                                        <label><i class="fas fa-tag"></i> Categories *</label>
+                                        <div class="row">
                                             <?php foreach ($categories as $category): ?>
-                                                <option value="<?php echo $category['id']; ?>"
-                                                    <?php echo ($product['category_id'] == $category['id']) ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($category['category_name']); ?>
-                                                </option>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="category_<?php echo $category['id']; ?>" 
+                                                               name="categories[]" 
+                                                               value="<?php echo $category['id']; ?>"
+                                                               <?php echo (isset($productCategories) && in_array($category['id'], array_column($productCategories, 'id'))) ? 'checked' : ''; ?>>
+                                                        <label class="form-check-label" for="category_<?php echo $category['id']; ?>">
+                                                            <?php echo htmlspecialchars($category['category_name']); ?>
+                                                        </label>
+                                                    </div>
+                                                </div>
                                             <?php endforeach; ?>
-                                        </select>
+                                        </div>
+                                        <small class="form-text text-muted">Select one or more categories for this product.</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

@@ -137,7 +137,7 @@ function render_stars($rating, $totalReviews = 0) {
                             <div class="me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple-medium) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-tag" style="color: white; font-size: 1.3rem;"></i></div>
                             <div>
                                 <small style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Category</small>
-                                <div style="color: var(--purple-dark); font-weight: 700; font-size: 1.1rem;"><?php echo htmlspecialchars($product['category_name']); ?></div>
+                                <div style="color: var(--purple-dark); font-weight: 700; font-size: 1.1rem;"><?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized'); ?></div>
                             </div>
                         </div>
                     </div>
@@ -164,10 +164,10 @@ function render_stars($rating, $totalReviews = 0) {
                             <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                             <div class="mb-4">
                                 <label for="quantity" class="form-label fw-bold" style="color: var(--purple-dark); font-size: 1.1rem;"><i class="fas fa-shopping-basket me-2"></i>Quantity:</label>
-                                <div class="input-group" style="max-width: 200px;">
-                                    <button type="button" class="btn btn-outline-secondary qty-btn" onclick="decreaseQty()"><i class="fas fa-minus"></i></button>
+                                <div class="input-group" style="max-width: 200px; border-radius: 8px; overflow: hidden;">
+                                    <button type="button" class="btn qty-btn" onclick="decreaseQty()"><i class="fas fa-minus"></i></button>
                                     <input type="number" class="form-control text-center fw-bold" id="quantity" name="product_qty" value="1" min="1" max="<?php echo $inventory; ?>" style="border-left: none; border-right: none; font-size: 1.2rem; -moz-appearance: textfield;">
-                                    <button type="button" class="btn btn-outline-secondary qty-btn" onclick="increaseQty()"><i class="fas fa-plus"></i></button>
+                                    <button type="button" class="btn qty-btn" onclick="increaseQty()"><i class="fas fa-plus"></i></button>
                                 </div>
                                 <small class="text-muted">Maximum: <?php echo $inventory; ?> available</small>
                             </div>
@@ -198,21 +198,11 @@ function render_stars($rating, $totalReviews = 0) {
                         <!-- Star Filter Buttons -->
                         <div class="btn-group btn-group-sm me-3" role="group" aria-label="Star rating filter">
                             <button type="button" class="btn btn-outline-warning active star-filter-btn" data-rating="all" style="border-radius: 20px; font-weight: 600;">All</button>
-                            <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="5" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
-                                <i class="fas fa-star"></i> 5
-                            </button>
-                            <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="4" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
-                                <i class="fas fa-star"></i> 4
-                            </button>
-                            <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="3" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
-                                <i class="fas fa-star"></i> 3
-                            </button>
-                            <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="2" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
-                                <i class="fas fa-star"></i> 2
-                            </button>
-                            <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="1" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
-                                <i class="fas fa-star"></i> 1
-                            </button>
+                            <?php for ($rating = 5; $rating >= 1; $rating--): ?>
+                                <button type="button" class="btn btn-outline-warning star-filter-btn" data-rating="<?php echo $rating; ?>" style="border-radius: 20px; font-weight: 600; margin-left: 0.25rem;">
+                                    <i class="fas fa-star"></i> <?php echo $rating; ?>
+                                </button>
+                            <?php endfor; ?>
                         </div>                    <!-- Date Sort Toggle Button -->
                     <button type="button" id="dateSortToggle" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; font-weight: 600;">
                         <i class="fas fa-clock me-1"></i><span id="sortText">Newest First</span>
@@ -640,17 +630,20 @@ function render_stars($rating, $totalReviews = 0) {
         const prevBtn = document.querySelector('.nav-prev');
         const nextBtn = document.querySelector('.nav-next');
         if (prevBtn && nextBtn) {
-            const isAtStart = currentImageIndex === 0;
-            const isAtEnd = currentImageIndex === productImages.length - 1;
-            prevBtn.style.opacity = isAtStart ? '0.4' : '1';
-            nextBtn.style.opacity = isAtEnd ? '0.4' : '1';
-            prevBtn.disabled = isAtStart;
-            nextBtn.disabled = isAtEnd;
+            prevBtn.style.opacity = '1';
+            nextBtn.style.opacity = '1';
+            prevBtn.disabled = false;
+            nextBtn.disabled = false;
         }
     }
     function navigateImage(direction) {
-        const newIndex = currentImageIndex + direction;
-        if (newIndex >= 0 && newIndex < productImages.length) { changeMainImage(newIndex); }
+        let newIndex = currentImageIndex + direction;
+        if (newIndex < 0) {
+            newIndex = productImages.length - 1;
+        } else if (newIndex >= productImages.length) {
+            newIndex = 0;
+        }
+        changeMainImage(newIndex);
     }
     function setupKeyboardNavigation() {
         document.addEventListener('keydown', function(e) {
@@ -672,6 +665,37 @@ function render_stars($rating, $totalReviews = 0) {
         if (current > min) { input.value = current - 1; }
     }
 </script>
+
+<style>
+.qty-btn {
+    transition: all 0.3s ease;
+    background: var(--purple-medium) !important;
+    color: white !important;
+    border-color: var(--purple-medium) !important;
+    border-radius: 0 !important;
+}
+
+.qty-btn:hover,
+.qty-btn:active {
+    background: var(--purple-dark) !important;
+    color: white !important;
+    border-color: var(--purple-dark) !important;
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+/* Floating animation for no-image placeholder */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+</style>
 
 <?php
 $content = ob_get_clean();

@@ -69,7 +69,7 @@ class AdminController {
             }
             $validator = new Validation();
             $validator->required('product_name', $_POST['product_name'] ?? '')
-                      ->required('category_id', $_POST['category_id'] ?? '')
+                      ->required('categories', $_POST['categories'] ?? '')
                       ->required('cost_price', $_POST['cost_price'] ?? '')
                       ->required('selling_price', $_POST['selling_price'] ?? '');
 
@@ -103,12 +103,13 @@ class AdminController {
                 }
             }
 
+            $categoryIds = is_array($_POST['categories']) ? $_POST['categories'] : [$_POST['categories']];
             $supplierId = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
             
             try {
                 // Create product first without image
                 $created = $this->productModel->create(
-                    intval($_POST['category_id']),
+                    $categoryIds,
                     trim($_POST['product_name']),
                     trim($_POST['description'] ?? ''),
                     floatval($_POST['cost_price']),
@@ -145,7 +146,7 @@ class AdminController {
                     if (!empty($primaryImagePath)) {
                         $this->productModel->update(
                             $created,
-                            intval($_POST['category_id']),
+                            $categoryIds,
                             trim($_POST['product_name']),
                             trim($_POST['description'] ?? ''),
                             floatval($_POST['cost_price']),
@@ -226,9 +227,10 @@ class AdminController {
             try {
                 $isActive = isset($_POST['is_active']) ? intval($_POST['is_active']) : 1;
                 $supplierId = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : null;
+                $categoryIds = is_array($_POST['categories']) ? $_POST['categories'] : [$_POST['categories']];
                 $ok = $this->productModel->update(
                     $id,
-                    intval($_POST['category_id']),
+                    $categoryIds,
                     trim($_POST['product_name']),
                     trim($_POST['description'] ?? ''),
                     floatval($_POST['cost_price']),
@@ -291,6 +293,7 @@ class AdminController {
         $suppliers = $this->supplierModel->getAll();
         $inventory = $this->productModel->getInventory($id);
         $productImages = $this->productModel->getProductImages($id);
+        $productCategories = $this->productModel->getProductCategories($id);
         include __DIR__ . '/../views/admin/product_edit.php';
     }
 
