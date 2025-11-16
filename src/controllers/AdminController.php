@@ -11,6 +11,7 @@ require_once __DIR__ . '/../models/Order.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Expense.php';
 require_once __DIR__ . '/../models/Supplier.php';
+require_once __DIR__ . '/../models/Review.php';
 
 class AdminController {
     private $productModel;
@@ -19,6 +20,7 @@ class AdminController {
     private $userModel;
     private $expenseModel;
     private $supplierModel;
+    private $reviewModel;
 
     public function __construct() {
         $this->productModel = new Product();
@@ -27,7 +29,8 @@ class AdminController {
         $this->userModel = new User();
         $this->expenseModel = new Expense();
         $this->supplierModel = new Supplier();
-    }
+        $this->reviewModel = new Review();
+    } // Added closing brace
 
     public function dashboard() {
         $orders = $this->orderModel->getAllOrders();
@@ -781,11 +784,12 @@ class AdminController {
                 // Always use current date if no specific date is provided
                 $date = isset($_GET['date']) && !empty($_GET['date']) ? $_GET['date'] : date('Y-m-d');
                 $salesData = $this->orderModel->getDailySales($date);
-                // Also include archived data from order_history
-                $archivedData = $this->orderModel->getSalesReportFromHistory($date, $date);
-                if (!empty($archivedData)) {
-                    $salesData = array_merge($salesData ?? [], $archivedData);
-                }
+                $archivedData = $this->orderModel->getSalesReportFromHistory($startDate, $endDate);
+                
+                // Combine sales data from active orders and archived orders
+                $salesData['order_count'] = ($salesData['order_count'] ?? 0) + ($archivedData['order_count'] ?? 0);
+                $salesData['total_sales'] = ($salesData['total_sales'] ?? 0) + ($archivedData['total_sales'] ?? 0);
+                
                 $reportTitle = 'Daily Sales Report';
                 $reportPeriod = date('F d, Y', strtotime($date));
                 $startDate = $date . ' 00:00:00';
@@ -797,10 +801,12 @@ class AdminController {
                 // Include archived data
                 $weekStart = date('Y-m-d', strtotime('monday this week'));
                 $weekEnd = date('Y-m-d', strtotime('sunday this week'));
-                $archivedData = $this->orderModel->getSalesReportFromHistory($weekStart, $weekEnd);
-                if (!empty($archivedData)) {
-                    $salesData = array_merge($salesData ?? [], $archivedData);
-                }
+                $archivedData = $this->orderModel->getSalesReportFromHistory($weekStart . ' 00:00:00', $weekEnd . ' 23:59:59');
+                
+                // Combine sales data from active orders and archived orders
+                $salesData['order_count'] = ($salesData['order_count'] ?? 0) + ($archivedData['order_count'] ?? 0);
+                $salesData['total_sales'] = ($salesData['total_sales'] ?? 0) + ($archivedData['total_sales'] ?? 0);
+                
                 $reportTitle = 'Weekly Sales Report';
                 $reportPeriodStart = date('M d, Y', strtotime('monday this week'));
                 $reportPeriodEnd = date('M d, Y', strtotime('sunday this week'));
@@ -816,10 +822,12 @@ class AdminController {
                 // Include archived data
                 $monthStart = "$year-$month-01";
                 $monthEnd = date('Y-m-t', strtotime($monthStart));
-                $archivedData = $this->orderModel->getSalesReportFromHistory($monthStart, $monthEnd);
-                if (!empty($archivedData)) {
-                    $salesData = array_merge($salesData ?? [], $archivedData);
-                }
+                $archivedData = $this->orderModel->getSalesReportFromHistory($monthStart . ' 00:00:00', $monthEnd . ' 23:59:59');
+                
+                // Combine sales data from active orders and archived orders
+                $salesData['order_count'] = ($salesData['order_count'] ?? 0) + ($archivedData['order_count'] ?? 0);
+                $salesData['total_sales'] = ($salesData['total_sales'] ?? 0) + ($archivedData['total_sales'] ?? 0);
+                
                 $reportTitle = 'Monthly Sales Report';
                 $reportPeriod = date('F Y', strtotime("$year-$month-01"));
                 $startDate = "$monthStart 00:00:00";
@@ -830,10 +838,12 @@ class AdminController {
                 $year = $_GET['year'] ?? date('Y');
                 $salesData = $this->orderModel->getYearlySales($year);
                 // Include archived data
-                $archivedData = $this->orderModel->getSalesReportFromHistory("$year-01-01", "$year-12-31");
-                if (!empty($archivedData)) {
-                    $salesData = array_merge($salesData ?? [], $archivedData);
-                }
+                $archivedData = $this->orderModel->getSalesReportFromHistory("$year-01-01 00:00:00", "$year-12-31 23:59:59");
+                
+                // Combine sales data from active orders and archived orders
+                $salesData['order_count'] = ($salesData['order_count'] ?? 0) + ($archivedData['order_count'] ?? 0);
+                $salesData['total_sales'] = ($salesData['total_sales'] ?? 0) + ($archivedData['total_sales'] ?? 0);
+                
                 $reportTitle = 'Yearly Sales Report';
                 $reportPeriod = $year;
                 $startDate = "$year-01-01 00:00:00";
@@ -844,10 +854,12 @@ class AdminController {
                 if ($customStart && $customEnd) {
                     $salesData = $this->orderModel->getCustomRangeSales($customStart, $customEnd);
                     // Include archived data
-                    $archivedData = $this->orderModel->getSalesReportFromHistory($customStart, $customEnd);
-                    if (!empty($archivedData)) {
-                        $salesData = array_merge($salesData ?? [], $archivedData);
-                    }
+                    $archivedData = $this->orderModel->getSalesReportFromHistory(date('Y-m-d 00:00:00', strtotime($customStart)), date('Y-m-d 23:59:59', strtotime($customEnd)));
+                    
+                    // Combine sales data from active orders and archived orders
+                    $salesData['order_count'] = ($salesData['order_count'] ?? 0) + ($archivedData['order_count'] ?? 0);
+                    $salesData['total_sales'] = ($salesData['total_sales'] ?? 0) + ($archivedData['total_sales'] ?? 0);
+                    
                     $reportTitle = 'Custom Range Sales Report';
                     $reportPeriod = date('M d, Y', strtotime($customStart)) . ' - ' . date('M d, Y', strtotime($customEnd));
                     $startDate = date('Y-m-d 00:00:00', strtotime($customStart));
@@ -1458,6 +1470,56 @@ class AdminController {
             ]);
         }
         exit();
+    } // Closing brace for deleteProductImages()
+
+    public function manageReviews() {
+        $search = $_GET['search'] ?? '';
+        $productId = $_GET['product_id'] ?? null;
+        
+        $itemsPerPage = 10;
+        $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
+        $offset = ($currentPage - 1) * $itemsPerPage;
+
+        $reviews = $this->reviewModel->getReviewsForAdmin($itemsPerPage, $offset, $search, $productId);
+        $totalReviews = $this->reviewModel->countReviewsForAdmin($search, $productId);
+        $totalPages = ceil($totalReviews / $itemsPerPage);
+
+        // Fetch all products for the filter dropdown
+        $productModel = new Product(); // Instantiate Product model here
+        $products = $productModel->findAll();
+
+        include __DIR__ . '/../views/admin/reviews.php';
     }
 
+    public function replyToReview() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            Session::setFlash('error', 'Invalid request method.');
+            header('Location: admin.php?page=reviews');
+            exit();
+        }
+
+        if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', 'Invalid CSRF token.');
+            header('Location: admin.php?page=reviews');
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        $adminReply = trim($_POST['admin_reply'] ?? '');
+
+        if (!$reviewId || empty($adminReply)) {
+            Session::setFlash('error', 'Review ID and reply cannot be empty.');
+            header('Location: admin.php?page=reviews');
+            exit();
+        }
+
+        if ($this->reviewModel->addAdminReply($reviewId, $adminReply)) {
+            Session::setFlash('success', 'Reply added successfully.');
+        } else {
+            Session::setFlash('error', 'Failed to add reply.');
+        }
+
+        header('Location: admin.php?page=reviews');
+        exit();
+    }
 }
