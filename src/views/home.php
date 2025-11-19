@@ -54,7 +54,7 @@ function render_stars_home($rating, $reviewCount) {
             <div class="position-relative">
                 <!-- Logo -->
                 <div class="mb-4">
-                    <img src="uploads/logo/Lotus Plushies Logo.png" alt="Lotus Plushies Logo" style="max-width: 150px; height: auto; border-radius: 50%; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);">
+                    <img src="uploads/logo/Lotus Plushies Logo.png" alt="Lotus Plushies Logo" class="rotating-logo" style="max-width: 150px; height: auto; border-radius: 50%; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
                 </div>
                 <h1 class="display-2 fw-bold text-white mb-3">Welcome to Lotus Plushies</h1>
                 <p class="lead text-white mb-4" style="font-size: 1.4rem;">Discover adorable plushies that bring joy and comfort</p>
@@ -170,6 +170,24 @@ function render_stars_home($rating, $reviewCount) {
     background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink-medium) 100%) !important;
     color: white !important;
     border-color: var(--purple-dark) !important;
+}
+
+/* Rotating logo animation */
+.rotating-logo {
+    transition: transform 0.3s ease;
+}
+
+.rotating-logo:hover {
+    animation: rotate-logo 2s linear infinite;
+}
+
+@keyframes rotate-logo {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>
 
