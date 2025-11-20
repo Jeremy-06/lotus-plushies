@@ -1666,4 +1666,34 @@ class AdminController {
         }
         exit();
     } // Closing brace for deleteProductImages()
+
+    public function profile() {
+        if (!Session::isLoggedIn()) {
+            Session::setFlash('message', 'Please login to view profile');
+            header('Location: index.php?page=login');
+            exit();
+        }
+        
+        // Validate user still exists in database
+        Session::validateUserExists();
+        
+        $userId = Session::getUserId();
+        $user = $this->userModel->findById($userId);
+        $recentOrders = $this->orderModel->getCustomerOrders($userId);
+        
+        // Check if user has pending or incomplete orders
+        $hasPendingOrders = $this->orderModel->hasPendingOrders($userId);
+        
+        // If user is admin, get admin count for deletion protection info
+        $adminCount = 0;
+        if ($user['role'] === 'admin') {
+            $adminCount = $this->userModel->countAdmins();
+        }
+        
+        $pageTitle = 'My Profile - Admin';
+        ob_start();
+        include __DIR__ . '/../views/admin/profile.php';
+        $content = ob_get_clean();
+        include __DIR__ . '/../views/admin_layout.php';
+    }
 }

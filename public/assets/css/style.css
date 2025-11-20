@@ -198,7 +198,7 @@ h3 {
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   position: relative;
-  z-index: 100;
+  z-index: 999998 !important;
   overflow: visible !important;
 }
 
@@ -1170,7 +1170,7 @@ a:hover {
 /* Dropdown */
 .dropdown {
   position: relative !important;
-  z-index: 9999;
+  z-index: 999999 !important;
   overflow: visible !important;
 }
 
@@ -1180,7 +1180,7 @@ a:hover {
   box-shadow: 0 4px 12px rgba(139, 95, 191, 0.25) !important;
   padding: 0.5rem;
   transition: all 0.3s ease;
-  z-index: 1000000 !important;
+  z-index: 9999999 !important;
   position: absolute !important;
   will-change: transform;
   transform: translate3d(0, 0, 0);
@@ -1188,7 +1188,7 @@ a:hover {
 }
 
 .dropdown-menu.show {
-  z-index: 999999 !important;
+  z-index: 9999999 !important;
   position: absolute !important;
 }
 
@@ -1212,7 +1212,22 @@ a:hover {
 /* Ensure dropdown parent has proper positioning */
 .nav-item.dropdown {
   position: relative;
-  z-index: 999999;
+  z-index: 999999 !important;
+}
+
+/* Navbar profile dropdown specific styles */
+.navbar .nav-item.dropdown {
+  position: relative !important;
+  z-index: 999999 !important;
+}
+
+.navbar .dropdown-menu {
+  z-index: 9999999 !important;
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  margin-top: 0.5rem !important;
 }
 
 /* Ensure dropdown containers don't clip the menu */

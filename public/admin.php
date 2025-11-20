@@ -147,6 +147,10 @@ switch ($page) {
     case 'upload_product_images':
         $controller->uploadProductImages();
         break;
+    
+    case 'profile':
+        $controller->profile();
+        break;
         
     case 'dashboard':
     default:

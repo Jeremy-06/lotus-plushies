@@ -51,7 +51,7 @@ require_once __DIR__ . '/../helpers/Session.php';
     <title><?php echo $pageTitle ?? 'Admin - Lotus Plushies'; ?></title>
 </head>
 <body class="admin-panel page-wrapper">
-<nav class="navbar navbar-expand-lg navbar-dark admin-navbar" style="position: relative; z-index: 1050;">
+<nav class="navbar navbar-expand-lg navbar-dark admin-navbar" style="position: sticky; top: 0; z-index: 999998 !important;">
     <div class="container-fluid">
         <a class="navbar-brand" href="admin.php">
             <i class="fas fa-user-shield"></i> Admin Panel
@@ -99,8 +99,8 @@ require_once __DIR__ . '/../helpers/Session.php';
                         <i class="fas fa-store"></i> View Store
                     </a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <li class="nav-item dropdown" style="position: relative !important; z-index: 999999 !important;">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="pointer-events: auto !important;">
                         <div class="user-avatar me-2" style="width: 32px; height: 32px; background: linear-gradient(135deg, #8b5fbf 0%, #b19cd9 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3);">
                             <i class="fas fa-user-shield" style="font-size: 0.9rem;"></i>
                         </div>
@@ -111,7 +111,7 @@ require_once __DIR__ . '/../helpers/Session.php';
                             ?>
                         </span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 220px; z-index: 99999 !important; position: absolute !important;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 220px; z-index: 9999999 !important; position: absolute !important; top: 100% !important; right: 0 !important; left: auto !important; margin-top: 0.5rem !important;">
                         <li class="px-3 py-3 border-bottom">
                             <div class="d-flex align-items-center">
                                 <div class="user-avatar me-2" style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5fbf 0%, #b19cd9 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
@@ -128,7 +128,7 @@ require_once __DIR__ . '/../helpers/Session.php';
                                 </div>
                             </div>
                         </li>
-                        <li class="mt-1"><a class="dropdown-item py-2" href="index.php?page=profile"><i class="fas fa-user me-2"></i> My Profile</a></li>
+                        <li class="mt-1"><a class="dropdown-item py-2" href="admin.php?page=profile"><i class="fas fa-user me-2"></i> My Profile</a></li>
                         <li><hr class="dropdown-divider my-1"></li>
                         <li><a class="dropdown-item py-2 text-danger" href="index.php?page=logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                     </ul>
