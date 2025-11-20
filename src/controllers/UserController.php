@@ -105,6 +105,65 @@ class UserController {
         exit();
     }
     
+    public function changePassword() {
+        if (!Session::isLoggedIn()) {
+            Session::setFlash('message', 'Please login first');
+            header('Location: index.php?page=login');
+            exit();
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?page=profile');
+            exit();
+        }
+        
+        if (!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('message', 'Invalid request');
+            header('Location: index.php?page=profile');
+            exit();
+        }
+        
+        $userId = Session::getUserId();
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        
+        // Validate user still exists in database
+        Session::validateUserExists();
+        
+        $user = $this->userModel->findById($userId);
+        
+        // Verify current password
+        if (!password_verify($currentPassword, $user['password_hash'])) {
+            Session::setFlash('message', 'Current password is incorrect');
+            header('Location: index.php?page=profile');
+            exit();
+        }
+        
+        // Validate new password
+        if (strlen($newPassword) < 6) {
+            Session::setFlash('message', 'New password must be at least 6 characters long');
+            header('Location: index.php?page=profile');
+            exit();
+        }
+        
+        if ($newPassword !== $confirmPassword) {
+            Session::setFlash('message', 'New passwords do not match');
+            header('Location: index.php?page=profile');
+            exit();
+        }
+        
+        // Update password
+        if ($this->userModel->updatePassword($userId, password_hash($newPassword, PASSWORD_DEFAULT))) {
+            Session::setFlash('success', 'Password changed successfully');
+        } else {
+            Session::setFlash('message', 'Failed to change password');
+        }
+        
+        header('Location: index.php?page=profile');
+        exit();
+    }
+    
     public function deleteAccount() {
         if (!Session::isLoggedIn()) {
             Session::setFlash('message', 'Please login first');
