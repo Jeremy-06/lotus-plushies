@@ -139,7 +139,7 @@ require_once __DIR__ . '/../helpers/Session.php';
 </nav>
 
 <div class="main-content">
-    <div class="container-fluid mt-4 mb-5 px-5">
+    <div class="container mt-4 mb-5 px-5">
         <?php
         // Display flash messages (read once to avoid clearing before echo)
         $flashSuccess = Session::getFlash('success');
