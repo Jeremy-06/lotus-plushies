@@ -31,7 +31,6 @@ class Review extends BaseModel {
     }
 
     public function validateComment($comment) {
-        // Removed bad word blocking - now just for logging if needed
         return true;
     }
 

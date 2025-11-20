@@ -3,8 +3,6 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-
-
 require_once __DIR__ . '/../src/config/Config.php';
 require_once __DIR__ . '/../src/helpers/Session.php';
 require_once __DIR__ . '/../src/controllers/ProductController.php';
@@ -19,8 +17,6 @@ require_once __DIR__ . '/../src/models/Category.php';
 date_default_timezone_set(Config::TIMEZONE);
 
 Session::start();
-
-// Note: Avoid any output before headers so redirects work correctly
 
 // Route handling
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';

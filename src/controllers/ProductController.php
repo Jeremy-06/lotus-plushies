@@ -40,7 +40,6 @@ class ProductController {
             $totalProducts = $this->productModel->countActiveProducts();
         }
 
-        // Attach average rating and review count for each product so the view can show ratings
         if (!empty($products)) {
             foreach ($products as $idx => $prod) {
                 $stats = $this->reviewModel->getAverageRating($prod['id']);
@@ -72,7 +71,6 @@ class ProductController {
     
                     $product = $this->productModel->findByIdWithDetails($productId);
     
-                    
     
                     if (!$product) {
     
@@ -84,7 +82,6 @@ class ProductController {
     
                     }
     
-                    
     
                     $inventory = $this->productModel->getInventory($productId);
     
@@ -99,7 +96,6 @@ class ProductController {
                     $showReviewForm = isset($_GET['review']) && $_GET['review'] === 'true';
     
                     
-    
                     $reviews = [];
     
                     if ($userId) {
@@ -112,7 +108,6 @@ class ProductController {
     
                     }
     
-                    
     
                     $canReviewOrderItem = false;
     
@@ -172,12 +167,12 @@ class ProductController {
     
                     }
     
-                    // Check if user has already reviewed this product or has purchased it
+              
                     $hasReviewedProduct = false;
                     $hasPurchasedProduct = false;
     
                     if ($userId) {
-                        // Check if user has reviewed this product
+                  
                         foreach ($reviews as $review) {
                             if ($review['user_id'] == $userId) {
                                 $hasReviewedProduct = true;
@@ -185,7 +180,7 @@ class ProductController {
                             }
                         }
     
-                        // Check if user has purchased this product
+       
                         $hasPurchasedProduct = $this->orderModel->hasUserPurchasedProduct($userId, $productId);
                     }
     
